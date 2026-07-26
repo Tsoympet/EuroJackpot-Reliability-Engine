@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.venv/
+venv/
+build-runtime/
+dist/
+build/
+*.egg-info/
+
+# Test/cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local application data
+logs/
+*.log
+*.sqlite-wal
+*.sqlite-shm
+
+# Generated local outputs
+outputs/*.png
+outputs/*.json
+!outputs/README.txt
+
+# Installer output
+installer-output/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
