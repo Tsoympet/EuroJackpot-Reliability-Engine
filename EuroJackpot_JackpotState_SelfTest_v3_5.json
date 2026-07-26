@@ -1,0 +1,20 @@
+{
+  "version": "3.5",
+  "cap_eur": 120000000.0,
+  "high_jackpot_threshold_eur": 80000000,
+  "verified_source_minimum": 2,
+  "main_probability": 0.1,
+  "euro_probability": 0.16666666666666666,
+  "database": "EuroJackpot_Operational_v3_5.sqlite",
+  "importer": "eurojackpot_jackpot_state_v3_5.py",
+  "automation_title": "EuroJackpot Prize Watch",
+  "automation_schedule": "Tuesday and Friday 23:30 Europe/Athens",
+  "modes": [
+    "NORMAL",
+    "ROLLOVER",
+    "HIGH_JACKPOT",
+    "MAX_CAP",
+    "MAX_CAP_OVERFLOW",
+    "RESET"
+  ]
+}

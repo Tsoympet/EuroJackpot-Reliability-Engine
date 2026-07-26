@@ -1,0 +1,77 @@
+{
+  "history": {
+    "draws": 975,
+    "first": "2012-03-23",
+    "last": "2026-07-24",
+    "calendar_audit": {
+      "expected_dates": 975,
+      "actual_dates": 975,
+      "missing_dates": [],
+      "off_schedule_dates": [],
+      "duplicate_dates": 0,
+      "pass": true
+    },
+    "next_draw": "2026-07-28"
+  },
+  "feature_smoke": {
+    "main_X_shape": [
+      8000,
+      32
+    ],
+    "euro_X_shape": [
+      1334,
+      32
+    ],
+    "main_feature_count": 32,
+    "euro_feature_count": 32
+  },
+  "weekday_smoke": {
+    "selected_C": 0.0003,
+    "holdout_draws": 195,
+    "permutation_p": 0.61
+  },
+  "database_before": {
+    "integrity": "ok",
+    "foreign_key_violations": 0,
+    "counts": {
+      "draws": 975,
+      "sources": 7,
+      "models": 8,
+      "predictions": 1,
+      "jackpot_state": 0,
+      "jackpot_strategy_history": 0
+    },
+    "tables_ok": true
+  },
+  "jackpot_import": {
+    "accepted_mode": "MAX_CAP_OVERFLOW",
+    "probability_invariance": {
+      "mode": "MAX_CAP_OVERFLOW",
+      "main_probability": 0.1,
+      "euro_probability": 0.16666666666666666,
+      "main_expected_hits": 0.5,
+      "euro_expected_hits": 0.3333333333333333,
+      "passed": true
+    },
+    "invalid_one_source_errors": [
+      "VERIFIED state requires at least two sources",
+      "VERIFIED state requires primary and secondary source URLs"
+    ],
+    "invalid_cap_errors": [
+      "cap_reached is inconsistent with jackpot_eur and cap_eur"
+    ],
+    "latest_mode": "MAX_CAP_OVERFLOW",
+    "audit_counts": {
+      "ACCEPTED": 1,
+      "REJECTED": 2
+    },
+    "db_integrity_after": "ok",
+    "prediction_record": {
+      "target_draw": "2026-07-28",
+      "primary_main": "[4, 21, 35, 37, 42]",
+      "primary_euro": "[5, 7]",
+      "deployed_main_probability": 0.1,
+      "deployed_euro_probability": 0.16666666666666666
+    }
+  }
+}

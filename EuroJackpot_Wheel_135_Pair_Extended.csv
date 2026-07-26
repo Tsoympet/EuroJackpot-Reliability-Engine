@@ -1,0 +1,94 @@
+{
+  "audit_version": "3.1",
+  "protocol": "C selected using three expanding development folds; untouched final 20% evaluated once",
+  "candidate_C": [
+    0.0003,
+    0.001,
+    0.003,
+    0.01,
+    0.03,
+    0.1,
+    0.3
+  ],
+  "development_cv": {
+    "0.0003": {
+      "mean_brier": 0.13888885610453197,
+      "fold_brier": [
+        0.138887283685392,
+        0.13888999532153462,
+        0.1388892893066693
+      ]
+    },
+    "0.001": {
+      "mean_brier": 0.1388891414205732,
+      "fold_brier": [
+        0.13888382058809676,
+        0.13889300650406933,
+        0.1388905971695535
+      ]
+    },
+    "0.003": {
+      "mean_brier": 0.13889241202443042,
+      "fold_brier": [
+        0.13887608749553687,
+        0.1389043169733828,
+        0.1388968316043716
+      ]
+    },
+    "0.01": {
+      "mean_brier": 0.13892195167876775,
+      "fold_brier": [
+        0.13886744583966545,
+        0.13896498737472254,
+        0.13893342182191526
+      ]
+    },
+    "0.03": {
+      "mean_brier": 0.13904499162237688,
+      "fold_brier": [
+        0.13891535773804436,
+        0.1391684733233318,
+        0.1390511438057545
+      ]
+    },
+    "0.1": {
+      "mean_brier": 0.1393498926200891,
+      "fold_brier": [
+        0.1391130214951065,
+        0.13963423727361343,
+        0.1393024190915473
+      ]
+    },
+    "0.3": {
+      "mean_brier": 0.13969194009481986,
+      "fold_brier": [
+        0.1393245587683653,
+        0.14018691642091624,
+        0.13956434509517804
+      ]
+    }
+  },
+  "selected_C": 0.0003,
+  "holdout": {
+    "draws": 195,
+    "model_brier": 0.1388859986606943,
+    "uniform_brier": 0.1388888888888889,
+    "brier_improvement": 2.8902281946074915e-06,
+    "model_log_loss": 0.45055080152406907,
+    "uniform_log_loss": 0.45056120886630463,
+    "average_top2_hits": 0.3641025641025641,
+    "permutation_p": 0.593940605939406,
+    "block_bootstrap_ci_low": -9.030543757266813e-06,
+    "block_bootstrap_ci_high": 1.4994799414908725e-05,
+    "block_bootstrap_probability_positive": 0.6867
+  },
+  "descriptive_number_4": {
+    "tuesday_draws": 226,
+    "friday_draws": 227,
+    "tuesday_occurrences": 44,
+    "friday_occurrences": 21,
+    "tuesday_rate": 0.19469026548672566,
+    "friday_rate": 0.09251101321585903
+  },
+  "conclusion": "Not a reliable predictive edge: holdout improvement is negligible, permutation p is not significant, and the block-bootstrap interval crosses zero."
+}

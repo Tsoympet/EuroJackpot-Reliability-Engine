@@ -1,0 +1,21 @@
+# EuroJackpot Reliability Engine v3.6 — Ticket Render Integration
+
+Version 3.6 adds an automated **visual ticket rendering layer** on top of the v3.5 operational engine.
+
+## New components
+
+- `EuroJackpot_Ticket_Template_v3_6.png`
+- `eurojackpot_ticket_renderer_v3_6.py`
+- `run_eurojackpot_ticket_render_v3_6.py`
+- `EuroJackpot_Ticket_Payload_Sample_v3_6.json`
+- `EuroJackpot_Ticket_Render_Integration_v3_6.md`
+
+## New database object
+
+- `ticket_artifacts`
+
+## Purpose
+
+After each engine run, the prediction results can now be rendered onto a EuroJackpot-style ticket image for quick review and archiving.
+
+This layer is purely presentational and does not modify the probability engine.

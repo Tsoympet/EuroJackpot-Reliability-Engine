@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/python3 /opt/eurojackpot-engine/eurojackpot_desktop_app_v3_8.py "$@"

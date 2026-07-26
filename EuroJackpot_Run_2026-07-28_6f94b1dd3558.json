@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=EuroJackpot Reliability Engine
+Comment=Prediction research, validation, jackpot and ticket-rendering desktop application
+Exec=eurojackpot-engine
+Icon=eurojackpot-engine
+Terminal=false
+Type=Application
+Categories=Utility;Education;
+StartupNotify=true
