@@ -1,2 +1,9 @@
-#!/bin/sh
-exec /usr/bin/python3 /opt/eurojackpot-engine/eurojackpot_desktop_app_v3_8.py "$@"
+[Desktop Entry]
+Name=EuroJackpot Reliability Engine
+Comment=Prediction research, validation, jackpot and ticket-rendering desktop application
+Exec=eurojackpot-engine
+Icon=eurojackpot-engine
+Terminal=false
+Type=Application
+Categories=Utility;Education;
+StartupNotify=true

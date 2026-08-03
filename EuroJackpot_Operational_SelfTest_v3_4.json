@@ -1,63 +1,638 @@
-# EuroJackpot One-Command Workflow v3.7
-
-## Full automatic run — recommended
-
-Windows:
-
-```text
-Run_EuroJackpot.bat
-```
-
-Linux/macOS:
-
-```bash
-./run_eurojackpot.sh
-```
-
-This performs the full v3 research-engine retraining and validation run, reads the generated portfolio, validates history and wheels, checks the database, freezes the run, renders the ticket image and writes the JSON report.
-
-A full run is computationally intensive and may take substantially longer than the quick run.
-
-## Quick audited run
-
-Windows:
-
-```text
-Run_EuroJackpot_QUICK.bat
-```
-
-Linux/macOS:
-
-```bash
-./run_eurojackpot_quick.sh
-```
-
-This reuses the latest audited whole-engine result file and runs the complete downstream validation, freezing, database and ticket-rendering workflow.
-
-## Direct commands
-
-```bash
-python eurojackpot_one_click_v3_7.py --engine-mode full
-```
-
-```bash
-python eurojackpot_one_click_v3_7.py --engine-mode audited
-```
-
-## Automatic outputs
-
-The `outputs` folder receives:
-
-- `EuroJackpot_Ticket_<draw>_<hash>.png`
-- `EuroJackpot_Run_<draw>_<hash>.json`
-- a full-engine log when full mode is used
-
-The SQLite database records each run in:
-
-- `workflow_runs_v3_7`
-- `workflow_lines_v3_7`
-- `ticket_artifacts`
-
-## Jackpot state
-
-The workflow uses the latest `VERIFIED` jackpot state in the database. When none exists, the ticket displays `TBA`. Jackpot state does not alter number probabilities.
+{
+  "version": "3.4",
+  "generated_at_utc": "2026-07-26T12:42:57.946720+00:00",
+  "database": "/mnt/data/v35_fixed_release/EuroJackpot_Operational_v3_4.sqlite",
+  "seed_counts": {
+    "draws": 975,
+    "sources": 7,
+    "cross_lottery_sources": 5,
+    "models": 8
+  },
+  "prediction": {
+    "target_draw": "2026-07-28",
+    "data_cutoff": "2026-07-24",
+    "model_version": "3.4",
+    "champion_model": "uniform-1.0",
+    "research_model": "v3.3-advanced-ensemble",
+    "primary_main": [
+      4,
+      21,
+      35,
+      37,
+      42
+    ],
+    "primary_euro": [
+      5,
+      7
+    ],
+    "deployed_main_probability": 0.1,
+    "deployed_euro_probability": 0.16666666666666666,
+    "confidence_state": "Uniform mode; experimental line frozen",
+    "created_at_utc": "2026-07-26T12:42:57.729483+00:00",
+    "code_hash": "8a1b005fbb90097a73872edabd67a35fd7ea4c250d9aeda722a969c31ce6236b",
+    "data_hash": "7ff3c0863d2dda0f8241e45c6ef0f3afecba186606fa615ea50caf7201d687b4",
+    "record_hash": "558d345e499e936e61fe7fa162d5f787a5e31b648e0f4fd6d9824d8464fc8f0f"
+  },
+  "prospective_summary": {
+    "scored_draws": 0,
+    "avg_main_hits": null,
+    "avg_euro_hits": null,
+    "main_baseline": 0.5,
+    "euro_baseline": 0.3333333333333333
+  },
+  "champion_challenger": {
+    "champion": {
+      "model_id": "uniform",
+      "version": "1.0",
+      "role": "champion",
+      "status": "DEPLOYED",
+      "description": "Exact fair-draw inclusion probability; mandatory fallback.",
+      "brier": 0.09,
+      "log_loss": 0.3250829733914482,
+      "calibration_error": 0.0,
+      "prospective_draws": 0,
+      "gate_status": "PASS"
+    },
+    "challengers": [
+      {
+        "model_id": "super-learner",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Cross-fitted nonnegative stacking with uniform floor.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      },
+      {
+        "model_id": "robust-stacking",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Worst-period distributionally robust ensemble.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      },
+      {
+        "model_id": "dynamic-bayes",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Logistic-normal dynamic Bayesian state model.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      },
+      {
+        "model_id": "regime-hmm",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Hidden-regime Bernoulli model.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      },
+      {
+        "model_id": "interaction-ising",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Regularised maximum-entropy pair interaction model.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      },
+      {
+        "model_id": "survival-hazard",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Gap hazard model compared with geometric null.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      },
+      {
+        "model_id": "gp-drift",
+        "version": "3.3",
+        "role": "challenger",
+        "status": "RESEARCH",
+        "description": "Low-amplitude Gaussian-process drift model.",
+        "brier": null,
+        "log_loss": null,
+        "calibration_error": null,
+        "prospective_draws": 0,
+        "gate_status": "FAIL"
+      }
+    ],
+    "promotion_test": {
+      "passed": false,
+      "gates": {
+        "minimum_prospective_draws": false,
+        "brier_better": false,
+        "log_loss_better": false,
+        "calibration_ok": false,
+        "periods_positive": false,
+        "bootstrap_positive": false,
+        "corrected_p_below_0_05": false,
+        "uniform_excluded_mcs": false,
+        "sequential_e_value_at_least_20": false,
+        "stable_future": false
+      },
+      "decision": "KEEP UNIFORM CHAMPION"
+    }
+  },
+  "power_analysis": {
+    "main": [
+      {
+        "effect": 0.005,
+        "baseline_mean": 0.5,
+        "variance": 0.413265306122449,
+        "draws_80": 129747,
+        "years_80": 1247.5673076923076,
+        "draws_90": 173695,
+        "years_90": 1670.1442307692307
+      },
+      {
+        "effect": 0.01,
+        "baseline_mean": 0.5,
+        "variance": 0.413265306122449,
+        "draws_80": 32437,
+        "years_80": 311.8942307692308,
+        "draws_90": 43424,
+        "years_90": 417.53846153846155
+      },
+      {
+        "effect": 0.015,
+        "baseline_mean": 0.5,
+        "variance": 0.413265306122449,
+        "draws_80": 14417,
+        "years_80": 138.625,
+        "draws_90": 19300,
+        "years_90": 185.57692307692307
+      },
+      {
+        "effect": 0.02,
+        "baseline_mean": 0.5,
+        "variance": 0.413265306122449,
+        "draws_80": 8110,
+        "years_80": 77.98076923076923,
+        "draws_90": 10856,
+        "years_90": 104.38461538461539
+      },
+      {
+        "effect": 0.03,
+        "baseline_mean": 0.5,
+        "variance": 0.413265306122449,
+        "draws_80": 3605,
+        "years_80": 34.66346153846154,
+        "draws_90": 4825,
+        "years_90": 46.39423076923077
+      },
+      {
+        "effect": 0.05,
+        "baseline_mean": 0.5,
+        "variance": 0.413265306122449,
+        "draws_80": 1298,
+        "years_80": 12.48076923076923,
+        "draws_90": 1737,
+        "years_90": 16.701923076923077
+      }
+    ],
+    "euro": [
+      {
+        "effect": 0.005,
+        "baseline_mean": 0.3333333333333333,
+        "variance": 0.25252525252525254,
+        "draws_80": 79282,
+        "years_80": 762.3269230769231,
+        "draws_90": 106136,
+        "years_90": 1020.5384615384615
+      },
+      {
+        "effect": 0.01,
+        "baseline_mean": 0.3333333333333333,
+        "variance": 0.25252525252525254,
+        "draws_80": 19821,
+        "years_80": 190.58653846153845,
+        "draws_90": 26534,
+        "years_90": 255.1346153846154
+      },
+      {
+        "effect": 0.02,
+        "baseline_mean": 0.3333333333333333,
+        "variance": 0.25252525252525254,
+        "draws_80": 4956,
+        "years_80": 47.65384615384615,
+        "draws_90": 6634,
+        "years_90": 63.78846153846154
+      },
+      {
+        "effect": 0.03,
+        "baseline_mean": 0.3333333333333333,
+        "variance": 0.25252525252525254,
+        "draws_80": 2203,
+        "years_80": 21.182692307692307,
+        "draws_90": 2949,
+        "years_90": 28.35576923076923
+      },
+      {
+        "effect": 0.05,
+        "baseline_mean": 0.3333333333333333,
+        "variance": 0.25252525252525254,
+        "draws_80": 793,
+        "years_80": 7.625,
+        "draws_90": 1062,
+        "years_90": 10.211538461538462
+      }
+    ]
+  },
+  "negative_controls": {
+    "real_features": {
+      "brier": 0.09001778483013446,
+      "mean_probability": 0.09988740334983685
+    },
+    "random_noise": {
+      "brier": 0.0900481950355102,
+      "mean_probability": 0.10000088581961705
+    },
+    "uniform": {
+      "brier": 0.09001695309351908,
+      "mean_probability": 0.0999929358575869
+    },
+    "passed": true
+  },
+  "leakage_tests": {
+    "feature_cutoff_audit": [
+      {
+        "target_index": 120,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 119
+      },
+      {
+        "target_index": 191,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 190
+      },
+      {
+        "target_index": 262,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 261
+      },
+      {
+        "target_index": 333,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 332
+      },
+      {
+        "target_index": 404,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 403
+      },
+      {
+        "target_index": 475,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 474
+      },
+      {
+        "target_index": 546,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 545
+      },
+      {
+        "target_index": 617,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 616
+      },
+      {
+        "target_index": 688,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 687
+      },
+      {
+        "target_index": 759,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 758
+      },
+      {
+        "target_index": 830,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 829
+      },
+      {
+        "target_index": 901,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 900
+      },
+      {
+        "target_index": 972,
+        "feature_rows": 50,
+        "feature_cols": 5,
+        "uses_future_rows": false,
+        "max_history_index": 971
+      }
+    ],
+    "safe_pipeline_scan": {
+      "passed": true,
+      "suspicious": [],
+      "future_timestamp_violation": false
+    },
+    "deliberately_leaked_scan": {
+      "passed": false,
+      "suspicious": [
+        {
+          "column": 5,
+          "correlation": 1.0,
+          "reason": "near-target correlation"
+        },
+        {
+          "column": null,
+          "correlation": null,
+          "reason": "feature timestamp is not before target"
+        }
+      ],
+      "future_timestamp_violation": true
+    },
+    "passed": true
+  },
+  "independent_verification": {
+    "combination_space_main_engine": 139838160,
+    "combination_space_independent": 139838160,
+    "combination_space_passed": true,
+    "jackpot_probability": 7.1511238420185165e-09,
+    "wheel_checks": {
+      "54": {
+        "path": "/mnt/data/v35_fixed_release/EuroJackpot_Wheel_54_Pair_Compact.csv",
+        "rows": 54,
+        "expected_lines": 54,
+        "unique_lines": 54,
+        "required_subsets": 66,
+        "covered_subsets": 66,
+        "missing_subsets": 0,
+        "passed": true
+      },
+      "135": {
+        "path": "/mnt/data/v35_fixed_release/EuroJackpot_Wheel_135_Pair_Extended.csv",
+        "rows": 135,
+        "expected_lines": 135,
+        "unique_lines": 135,
+        "required_subsets": 66,
+        "covered_subsets": 66,
+        "missing_subsets": 0,
+        "passed": true
+      },
+      "198": {
+        "path": "/mnt/data/v35_fixed_release/EuroJackpot_Wheel_198_Triple_Compact.csv",
+        "rows": 198,
+        "expected_lines": 198,
+        "unique_lines": 198,
+        "required_subsets": 220,
+        "covered_subsets": 220,
+        "missing_subsets": 0,
+        "passed": true
+      },
+      "495": {
+        "path": "/mnt/data/v35_fixed_release/EuroJackpot_Wheel_495_Triple_Extended.csv",
+        "rows": 495,
+        "expected_lines": 495,
+        "unique_lines": 495,
+        "required_subsets": 220,
+        "covered_subsets": 220,
+        "missing_subsets": 0,
+        "passed": true
+      }
+    },
+    "registry_check": {
+      "supplied_hash": "558d345e499e936e61fe7fa162d5f787a5e31b648e0f4fd6d9824d8464fc8f0f",
+      "computed_hash": "558d345e499e936e61fe7fa162d5f787a5e31b648e0f4fd6d9824d8464fc8f0f",
+      "passed": true
+    },
+    "all_passed": true
+  },
+  "cross_lottery_control": {
+    "control_status": "synthetic-control",
+    "features": [
+      "normalised_sum",
+      "odd_ratio",
+      "low_ratio",
+      "normalised_range",
+      "consecutive_ratio"
+    ],
+    "eurojackpot_mean": [
+      0.5056164102564106,
+      0.5087179487179495,
+      0.5109743589743589,
+      0.6913657770800647,
+      0.09666666666666666
+    ],
+    "control_mean": [
+      0.5135191378669652,
+      0.5027692307692309,
+      0.48328205128205054,
+      0.677285067873304,
+      0.07564102564102564
+    ],
+    "difference": [
+      -0.00790272761055466,
+      0.0059487179487186514,
+      0.027692307692308404,
+      0.014080709206760744,
+      0.02102564102564103
+    ],
+    "max_abs_difference": 0.027692307692308404
+  },
+  "portfolio_frontier": [
+    {
+      "tier": "Frozen original",
+      "lines": 5,
+      "cost_eur": 12.5,
+      "jackpot_probability": 3.575561921009258e-08,
+      "coverage_multiple": 5,
+      "strategy": "Five frozen lines",
+      "guarantee": "None"
+    },
+    {
+      "tier": "Diversified 10",
+      "lines": 10,
+      "cost_eur": 25.0,
+      "jackpot_probability": 7.151123842018516e-08,
+      "coverage_multiple": 10,
+      "strategy": "Low-overlap experimental portfolio",
+      "guarantee": "None"
+    },
+    {
+      "tier": "Diversified 20",
+      "lines": 20,
+      "cost_eur": 50.0,
+      "jackpot_probability": 1.4302247684037032e-07,
+      "coverage_multiple": 20,
+      "strategy": "Expanded low-overlap portfolio",
+      "guarantee": "None"
+    },
+    {
+      "tier": "Compact pair wheel",
+      "lines": 54,
+      "cost_eur": 135.0,
+      "jackpot_probability": 3.861606874689999e-07,
+      "coverage_multiple": 54,
+      "strategy": "All selected-pool main pairs \u00d7 4-number Euro pairs",
+      "guarantee": "Conditional \u22652+2"
+    },
+    {
+      "tier": "Extended pair wheel",
+      "lines": 135,
+      "cost_eur": 337.5,
+      "jackpot_probability": 9.654017186724997e-07,
+      "coverage_multiple": 135,
+      "strategy": "All selected-pool main pairs \u00d7 6-number Euro pairs",
+      "guarantee": "Conditional \u22652+2"
+    },
+    {
+      "tier": "Compact triple wheel",
+      "lines": 198,
+      "cost_eur": 495.0,
+      "jackpot_probability": 1.4159225207196663e-06,
+      "coverage_multiple": 198,
+      "strategy": "All selected-pool main triples \u00d7 4-number Euro pairs",
+      "guarantee": "Conditional \u22653+2"
+    },
+    {
+      "tier": "Extended triple wheel",
+      "lines": 495,
+      "cost_eur": 1237.5,
+      "jackpot_probability": 3.5398063017991657e-06,
+      "coverage_multiple": 495,
+      "strategy": "All selected-pool main triples \u00d7 6-number Euro pairs",
+      "guarantee": "Conditional \u22653+2"
+    },
+    {
+      "tier": "Full selected-pool wheel",
+      "lines": 11880,
+      "cost_eur": 29700.0,
+      "jackpot_probability": 8.495535124317997e-05,
+      "coverage_multiple": 11880,
+      "strategy": "All 5-subsets of 12 \u00d7 all 2-subsets of 6",
+      "guarantee": "Conditional exact 5+2"
+    }
+  ],
+  "prize_tier_probabilities": [
+    {
+      "tier": "5+2",
+      "main_matches": 5,
+      "euro_matches": 2,
+      "probability": 7.1511238420185165e-09
+    },
+    {
+      "tier": "5+1",
+      "main_matches": 5,
+      "euro_matches": 1,
+      "probability": 1.4302247684037035e-07
+    },
+    {
+      "tier": "5+0",
+      "main_matches": 5,
+      "euro_matches": 0,
+      "probability": 3.218005728908332e-07
+    },
+    {
+      "tier": "4+2",
+      "main_matches": 4,
+      "euro_matches": 2,
+      "probability": 1.6090028644541663e-06
+    },
+    {
+      "tier": "4+1",
+      "main_matches": 4,
+      "euro_matches": 1,
+      "probability": 3.218005728908332e-05
+    },
+    {
+      "tier": "3+2",
+      "main_matches": 3,
+      "euro_matches": 2,
+      "probability": 7.07961260359833e-05
+    },
+    {
+      "tier": "4+0",
+      "main_matches": 4,
+      "euro_matches": 0,
+      "probability": 7.240512890043748e-05
+    },
+    {
+      "tier": "2+2",
+      "main_matches": 2,
+      "euro_matches": 2,
+      "probability": 0.0010147444731824274
+    },
+    {
+      "tier": "3+1",
+      "main_matches": 3,
+      "euro_matches": 1,
+      "probability": 0.0014159225207196662
+    },
+    {
+      "tier": "3+0",
+      "main_matches": 3,
+      "euro_matches": 0,
+      "probability": 0.0031858256716192487
+    },
+    {
+      "tier": "1+2",
+      "main_matches": 1,
+      "euro_matches": 2,
+      "probability": 0.005327408484207745
+    },
+    {
+      "tier": "2+1",
+      "main_matches": 2,
+      "euro_matches": 1,
+      "probability": 0.02029488946364855
+    }
+  ],
+  "next_draw_schedule": {
+    "pre_draw_days": [
+      "Tuesday",
+      "Friday"
+    ],
+    "pre_draw_local_time": "18:30 Europe/Athens",
+    "post_draw_action": "Verify result from two sources, append, score frozen records, update e-values."
+  }
+}
