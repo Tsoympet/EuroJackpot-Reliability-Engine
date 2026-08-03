@@ -58,7 +58,9 @@ class OutcomeScore:
 
 
 def ensure_learning_schema(db_path: str | Path) -> None:
-    db = OperationalDatabase(db_path)
+    path = Path(db_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = OperationalDatabase(path)
     db.initialize()
     # Workflow/ticket tables are created by the one-click stack; create stubs if absent.
     ensure_ticket_schema(db_path)
@@ -745,6 +747,7 @@ def train_on_history(
       4. update adaptive weights from success/failure
     """
     path = Path(db_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     if reset:
         for candidate in (path, Path(str(path) + "-wal"), Path(str(path) + "-shm")):
             if candidate.exists():
