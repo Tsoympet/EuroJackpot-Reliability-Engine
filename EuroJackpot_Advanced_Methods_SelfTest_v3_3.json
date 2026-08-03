@@ -1,9 +1,354 @@
-# Disclaimer
-
-This software is intended for statistical research, education, reproducibility, prediction tracking, coverage analysis and responsible portfolio planning.
-
-Lottery draws are designed to be random. No model, historical pattern, machine-learning algorithm, wheel system, jackpot condition or portfolio strategy can guarantee a prize or a positive financial return.
-
-The project currently retains the exact uniform model as its deployed champion because no non-uniform model has demonstrated a stable and prospectively validated predictive advantage.
-
-Users are responsible for complying with local laws, age restrictions and spending limits. Use only discretionary funds and never treat lottery participation as an investment strategy.
+{
+  "generated_at_utc": "2026-07-26T12:43:17.946363+00:00",
+  "history_draws": 975,
+  "methods": {
+    "sequential_evidence": {
+      "main_max_log10_e": -0.5896823844501182,
+      "main_mixture_e": 0.042673246507051454,
+      "euro_max_log10_e": -0.8881108429677134,
+      "euro_mixture_e": 0.052534354086753846
+    },
+    "change_point": {
+      "max_euro_change_probability": 0.017176521609752603,
+      "number": 5,
+      "cusum_main_1": {
+        "max_statistic": 8.800000000000079,
+        "index": 299,
+        "direction": "up"
+      }
+    },
+    "hmm_regime": {
+      "bic_1_state": 16513.846410479047,
+      "bic_2_state": 16754.902572657862,
+      "preferred_states": 1
+    },
+    "logistic_normal_dynamic": {
+      "latest_top_euro": [
+        5,
+        7,
+        12,
+        6,
+        2
+      ],
+      "latest_probabilities": [
+        0.16529547542948494,
+        0.1673918703156651,
+        0.16655486330079922,
+        0.15845315938627832,
+        0.1810023996363797,
+        0.16988529868406899,
+        0.17550394532354083,
+        0.1616099800828093,
+        0.163765411812055,
+        0.1583572125012527,
+        0.1621210359946104,
+        0.17005934753305585
+      ]
+    },
+    "dp_mixture": {
+      "active_components": 5,
+      "weights": [
+        0.06508075376681692,
+        0.5103615897022534,
+        0.0010206561013991755,
+        0.0010182033555680538,
+        0.23057672554509107,
+        0.12572740686313139,
+        0.06588290981436179,
+        0.0003317548513782167
+      ],
+      "label_counts": {
+        "0": 62,
+        "1": 498,
+        "4": 226,
+        "5": 123,
+        "6": 66
+      },
+      "lower_bound": -806.171658501982
+    },
+    "ising_euro": {
+      "mean_abs_interaction": 0.0,
+      "max_abs_interaction": 0.0,
+      "nonzero_fraction": 0.0,
+      "intercepts": [
+        -1.2240630345254975,
+        -1.291757071565951,
+        -1.1496018636559222,
+        -1.25276296793693,
+        -1.0956289079206056,
+        -1.22405768084701,
+        -1.1772025614056856,
+        -1.2527629664568052,
+        -1.1772025624867426,
+        -1.1864810435693238,
+        -1.629572617082252,
+        -1.4356348485254973
+      ]
+    },
+    "hypergraph_main_top10": [
+      20,
+      34,
+      35,
+      17,
+      21,
+      16,
+      11,
+      18,
+      49,
+      23
+    ],
+    "hazard_main": {
+      "max_rmse": 0.11523446893670272,
+      "number": 21
+    },
+    "gaussian_process_euro": {
+      "max_abs_drift_z": 2.8082512040186467,
+      "number": 7
+    },
+    "super_learner": {
+      "models": [
+        "Uniform",
+        "FullFrequency",
+        "Rolling50",
+        "EWMA"
+      ],
+      "weights": [
+        0.7848955159587531,
+        0.1327578954585117,
+        0.011062684550828584,
+        0.0712839040319067
+      ]
+    },
+    "distributionally_robust": {
+      "models": [
+        "Uniform",
+        "FullFrequency",
+        "Rolling50",
+        "EWMA"
+      ],
+      "weights": [
+        0.8101648729160987,
+        0.10687236662076098,
+        0.01005927287464528,
+        0.07290348758849508
+      ]
+    },
+    "conformal_main": {
+      "alpha": 0.1,
+      "threshold": 0.9059714257013765,
+      "empirical_joint_coverage": 0.9090909090909091,
+      "average_set_size": 49.142857142857146,
+      "median_set_size": 49.0
+    },
+    "conformal_euro": {
+      "alpha": 0.1,
+      "threshold": 0.8528864295890821,
+      "empirical_joint_coverage": 0.8777777777777778,
+      "average_set_size": 11.566666666666666,
+      "median_set_size": 12.0
+    },
+    "compression": {
+      "real": {
+        "length": 48750,
+        "compressed_bytes": 3987,
+        "compression_ratio": 0.08178461538461539,
+        "lz_complexity": 14
+      },
+      "synthetic_null": {
+        "length": 48750,
+        "compressed_bytes": 3989,
+        "compression_ratio": 0.08182564102564102,
+        "lz_complexity": 13
+      }
+    },
+    "lag_mutual_information": {
+      "max_same_number_mi": 0.0030316571488372274,
+      "familywise_permutation_p": 0.56,
+      "number": 44
+    },
+    "synthetic_null_lab": {
+      "simulations": 120,
+      "mean_null_improvement": -0.0016637491781722493,
+      "std_null_improvement": 7.169178285807116e-05,
+      "q95": -0.0015579198242153668,
+      "q99": -0.0015339001349527633,
+      "observed_improvement": -0.0017015121630506308,
+      "empirical_p": 0.7107438016528925
+    },
+    "model_confidence_set": {
+      "confidence_set": [
+        "Uniform"
+      ],
+      "elimination_history": [
+        {
+          "removed_candidate": "Rolling50",
+          "reference": "Uniform",
+          "statistic": 7.19555049103276,
+          "p": 0.005
+        },
+        {
+          "removed_candidate": "EWMA",
+          "reference": "Uniform",
+          "statistic": 4.691159309015556,
+          "p": 0.005
+        },
+        {
+          "removed_candidate": "FullFrequency",
+          "reference": "Uniform",
+          "statistic": 2.190985383828799,
+          "p": 0.04
+        }
+      ],
+      "alpha": 0.1
+    },
+    "prospective_registry": {
+      "model_version": "v3.3",
+      "data_cutoff": "2026-07-24",
+      "target_draw": "2026-07-28",
+      "primary_main": [
+        4,
+        21,
+        35,
+        37,
+        42
+      ],
+      "primary_euro": [
+        5,
+        7
+      ],
+      "deployment_status": "Uniform mode; experimental frozen line",
+      "frozen_at_utc": "2026-07-26T12:43:17.912056+00:00",
+      "sha256": "288be7d664381576fbe1e226d2ff545d9c104675e71d636d43f85cbc5a27457a"
+    },
+    "anti_crowd": {
+      "score": 0.54,
+      "penalties": {
+        "birthday_numbers": 0.2,
+        "consecutive_pairs": 0.0,
+        "same_endings": 0.0,
+        "multiples_of_five": 0.08,
+        "single_decade_concentration": 0.1,
+        "lucky_euro_7": 0.08
+      }
+    },
+    "prize_tier_probabilities": [
+      {
+        "tier": "5+2",
+        "main_matches": 5,
+        "euro_matches": 2,
+        "probability": 7.1511238420185165e-09
+      },
+      {
+        "tier": "5+1",
+        "main_matches": 5,
+        "euro_matches": 1,
+        "probability": 1.4302247684037035e-07
+      },
+      {
+        "tier": "5+0",
+        "main_matches": 5,
+        "euro_matches": 0,
+        "probability": 3.218005728908332e-07
+      },
+      {
+        "tier": "4+2",
+        "main_matches": 4,
+        "euro_matches": 2,
+        "probability": 1.6090028644541663e-06
+      },
+      {
+        "tier": "4+1",
+        "main_matches": 4,
+        "euro_matches": 1,
+        "probability": 3.218005728908332e-05
+      },
+      {
+        "tier": "3+2",
+        "main_matches": 3,
+        "euro_matches": 2,
+        "probability": 7.07961260359833e-05
+      },
+      {
+        "tier": "4+0",
+        "main_matches": 4,
+        "euro_matches": 0,
+        "probability": 7.240512890043748e-05
+      },
+      {
+        "tier": "2+2",
+        "main_matches": 2,
+        "euro_matches": 2,
+        "probability": 0.0010147444731824274
+      },
+      {
+        "tier": "3+1",
+        "main_matches": 3,
+        "euro_matches": 1,
+        "probability": 0.0014159225207196662
+      },
+      {
+        "tier": "3+0",
+        "main_matches": 3,
+        "euro_matches": 0,
+        "probability": 0.0031858256716192487
+      },
+      {
+        "tier": "1+2",
+        "main_matches": 1,
+        "euro_matches": 2,
+        "probability": 0.005327408484207745
+      },
+      {
+        "tier": "2+1",
+        "main_matches": 2,
+        "euro_matches": 1,
+        "probability": 0.02029488946364855
+      }
+    ],
+    "exact_cover_solver_test": {
+      "success": true,
+      "status": 0,
+      "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+      "objective": 5.999999999999724,
+      "blocks": [
+        [
+          0,
+          1,
+          2,
+          6
+        ],
+        [
+          0,
+          2,
+          4,
+          5
+        ],
+        [
+          0,
+          3,
+          6,
+          7
+        ],
+        [
+          1,
+          3,
+          5,
+          7
+        ],
+        [
+          1,
+          4,
+          5,
+          6
+        ],
+        [
+          2,
+          3,
+          4,
+          7
+        ]
+      ]
+    }
+  },
+  "deployment_rule": "Non-uniform deployment is prohibited unless every predeclared prospective reliability gate passes."
+}

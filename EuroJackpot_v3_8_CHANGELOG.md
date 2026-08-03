@@ -1,0 +1,61 @@
+# EuroJackpot Reliability Engine v3.8 — Changelog
+
+## 3.8.0
+
+### Reliability / packaging
+
+- Restored the repository after a mass filename/content corruption incident.
+- Added CI content-integrity checks (Python parse, PNG/ICO signatures, SQLite, JSON, wheel row counts).
+- Pinned runtime dependencies (`numpy`, `scipy`, `scikit-learn`, `Pillow`).
+
+### Runtime paths
+
+- One-click workflow and desktop app write tickets, logs, and operational DB copies under the per-user data directory instead of the install/repo tree.
+- Full research engine artifacts go to `EUROJACKPOT_OUTPUT_DIR` / user-data `engine/` so packaged installs are not mutated.
+- `EUROJACKPOT_DATA_DIR` overrides the user-data root for CI and portable runs.
+
+### Versioning
+
+- `VERSION` is the single source for application/workflow version labels.
+
+### Installer
+
+- Windows PowerShell installer copies an explicit runtime allowlist instead of the entire source tree.
+
+### Adaptive AI learning
+
+- Added `eurojackpot_learning_engine_v3_8.py` outcome learner:
+  - freezes one-click primary lines into the prediction registry
+  - scores official results via `eurojackpot_post_draw.py` or desktop **AI Learning**
+  - reinforces numbers after successful hits and dampens them after misses
+  - re-ranks experimental portfolios when learning history exists
+- Deployed champion remains exact-uniform; AI updates research ranking/confidence only.
+- Added learning self-test `run_eurojackpot_learning_selftest_v3_8.py`.
+- Added walk-forward historical training (`train-history` / `run_eurojackpot_history_training_v3_8.py`) that predicts each next official draw from prior history only, then updates weights from the real result.
+
+### Stable predictive edge hunt
+
+- Added `eurojackpot_edge_engine_v3_8.py`:
+  - multi-signal eligible stacking vs exact Uniform (walk-forward Brier / log-loss / period / bootstrap gates)
+  - pool-specific research edges (Euro has cleared the OOS battery; main has not)
+  - prize-value / anti-crowd portfolio layer for relative ranking
+  - fail-closed jackpot odds (`1/139,838,160`) unless both pools clear deployment gates
+- Desktop **AI Learning → Hunt Stable Edge** and `run_eurojackpot_edge_search_v3_8.py` runner.
+- One-click prefers `EuroJackpot_Model_Results_Edge_v3_8.json` when present.
+
+### Method audit and strengthening
+
+- Audited all prediction/probability methods across reliability v2/v3, advanced v3.3, edge v3.8, and learning.
+- Strengthened the edge primary stack with methods that beat Uniform alone OOS on Euro:
+  - `HierarchicalEra` (same euro-pool-size posterior)
+  - `DynamicLogit` (leak-free logistic-normal filter)
+  - `BetaBinomial`
+- Removed Hot/Cold/GapHazard from the euro primary stack after solo audits showed negative Brier.
+- Learning predictor now blends era-aware frequency + EWMA + adaptive weights.
+- Reliability v3 now emits explicit `deployed_next_probabilities` (exact-uniform unless validated).
+- `python eurojackpot_edge_engine_v3_8.py list-methods` prints the method catalog.
+
+### Desktop control center
+
+- Finished the PC app main Dashboard with menu bar, telemetry tiles, action grid, live log tools, and status bar.
+- Wired File / Run / View / Tools / Help menus to prediction, edge hunt, learning, jackpot, wheels, and reports.

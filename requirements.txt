@@ -1,8 +1,7 @@
 # EuroJackpot Reliability Engine — Python runtime dependencies
-#
-# All runtime modules used by this project (json, sqlite3, pathlib,
-# tkinter, argparse) are part of the Python standard library and
-# require no third-party installation.
-#
-# This file is intentionally minimal.  pip install -r requirements.txt
-# completes successfully on Python 3.10, 3.11, and 3.12.
+# Pinned to versions verified by CI on Python 3.10–3.12.
+
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.6.1
+Pillow==11.3.0

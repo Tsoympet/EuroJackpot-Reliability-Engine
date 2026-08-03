@@ -19,3 +19,5 @@ del "%~f0"
 "@ | Set-Content $TempScript -Encoding ASCII
     Start-Process $TempScript -WindowStyle Hidden
 }
+
+Write-Host "Note: user-generated outputs under $env:LOCALAPPDATA\EuroJackpotEngine\outputs were left in place."

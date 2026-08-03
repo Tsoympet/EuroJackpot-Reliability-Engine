@@ -1,7 +1,7 @@
 {
   "workflow_version": "3.7",
   "run_id": "2026-07-28-6f94b1dd3558",
-  "created_at_utc": "2026-07-26T13:37:52.539724+00:00",
+  "created_at_utc": "2026-08-03T09:25:51.607727+00:00",
   "target_draw": "2026-07-28",
   "data_cutoff": "2026-07-24",
   "engine_mode": "audited",
@@ -93,9 +93,9 @@
       "anti_crowd_score": 0.8
     }
   ],
-  "ticket_image": "/mnt/data/v37_build/outputs/EuroJackpot_Ticket_2026-07-28_6f94b1dd3558.png",
-  "database": "/mnt/data/v37_build/EuroJackpot_Operational_v3_7.sqlite",
-  "result_file": "/mnt/data/v37_build/EuroJackpot_Model_Results_v3_1_Audited.json",
+  "ticket_image": "/workspace/outputs/EuroJackpot_Ticket_2026-07-28_6f94b1dd3558.png",
+  "database": "/tmp/EuroJackpot_CI.sqlite",
+  "result_file": "/workspace/EuroJackpot_Model_Results_v3_1_Audited.json",
   "run_hash": "6f94b1dd3558a8e8e0c984406e6654979a1641eda3ed82515bcbd8ba76863010",
   "validation": {
     "history": {
@@ -108,7 +108,7 @@
       "combination_space": 139838160,
       "wheels": {
         "54": {
-          "path": "/mnt/data/v37_build/EuroJackpot_Wheel_54_Pair_Compact.csv",
+          "path": "/workspace/EuroJackpot_Wheel_54_Pair_Compact.csv",
           "rows": 54,
           "expected_lines": 54,
           "unique_lines": 54,
@@ -118,7 +118,7 @@
           "passed": true
         },
         "135": {
-          "path": "/mnt/data/v37_build/EuroJackpot_Wheel_135_Pair_Extended.csv",
+          "path": "/workspace/EuroJackpot_Wheel_135_Pair_Extended.csv",
           "rows": 135,
           "expected_lines": 135,
           "unique_lines": 135,
@@ -128,7 +128,7 @@
           "passed": true
         },
         "198": {
-          "path": "/mnt/data/v37_build/EuroJackpot_Wheel_198_Triple_Compact.csv",
+          "path": "/workspace/EuroJackpot_Wheel_198_Triple_Compact.csv",
           "rows": 198,
           "expected_lines": 198,
           "unique_lines": 198,
@@ -138,7 +138,7 @@
           "passed": true
         },
         "495": {
-          "path": "/mnt/data/v37_build/EuroJackpot_Wheel_495_Triple_Extended.csv",
+          "path": "/workspace/EuroJackpot_Wheel_495_Triple_Extended.csv",
           "rows": 495,
           "expected_lines": 495,
           "unique_lines": 495,

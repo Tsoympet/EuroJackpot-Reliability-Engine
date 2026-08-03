@@ -27,6 +27,87 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Content integrity checks
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import sqlite3
+
+          errors = []
+
+          def must_be_python(path: Path) -> None:
+              text = path.read_text(encoding="utf-8")
+              if "\x00" in text:
+                  errors.append(f"{path.name}: contains null bytes (not Python)")
+                  return
+              compile(text, str(path), "exec")
+
+          for path in sorted(Path(".").glob("*.py")):
+              try:
+                  must_be_python(path)
+              except Exception as exc:
+                  errors.append(f"{path.name}: {exc}")
+
+          # Critical non-Python assets must match expected formats
+          pngs = [
+              "EuroJackpot_Desktop_Icon.png",
+              "EuroJackpot_Ticket_Template_v3_6.png",
+          ]
+          for name in pngs:
+              data = Path(name).read_bytes()
+              if data[:8] != b"\x89PNG\r\n\x1a\n":
+                  errors.append(f"{name}: expected PNG signature")
+
+          ico = Path("EuroJackpot_Desktop_Icon.ico").read_bytes()
+          if ico[:4] != b"\x00\x00\x01\x00":
+              errors.append("EuroJackpot_Desktop_Icon.ico: expected ICO signature")
+
+          for name in [
+              "EuroJackpot_Operational_v3_4.sqlite",
+              "EuroJackpot_Operational_v3_7.sqlite",
+              "EuroJackpot_JackpotState_SelfTest_v3_5.sqlite",
+          ]:
+              try:
+                  with sqlite3.connect(name) as conn:
+                      conn.execute("SELECT 1").fetchone()
+              except Exception as exc:
+                  errors.append(f"{name}: not a usable SQLite DB ({exc})")
+
+          for name in [
+              "EuroJackpot_Advanced_Methods_Config_v3_3.json",
+              "EuroJackpot_Ticket_Payload_Sample_v3_6.json",
+              "EuroJackpot_Model_Results_v3_1_Audited.json",
+          ]:
+              try:
+                  json.loads(Path(name).read_text(encoding="utf-8"))
+              except Exception as exc:
+                  errors.append(f"{name}: invalid JSON ({exc})")
+
+          for name, expected in [
+              ("EuroJackpot_Wheel_54_Pair_Compact.csv", 54),
+              ("EuroJackpot_Wheel_135_Pair_Extended.csv", 135),
+              ("EuroJackpot_Wheel_198_Triple_Compact.csv", 198),
+              ("EuroJackpot_Wheel_495_Triple_Extended.csv", 495),
+          ]:
+              rows = sum(1 for _ in Path(name).open(encoding="utf-8")) - 1
+              if rows != expected:
+                  errors.append(f"{name}: expected {expected} data rows, found {rows}")
+
+          req = Path("requirements.txt").read_text(encoding="utf-8").lower()
+          for pkg in ("numpy", "scipy", "scikit-learn", "pillow"):
+              lines = [line.strip() for line in req.splitlines() if line.strip().startswith(pkg)]
+              if not lines:
+                  errors.append(f"requirements.txt missing {pkg}")
+              elif "==" not in lines[0]:
+                  errors.append(f"requirements.txt should pin {pkg} with ==")
+
+          if errors:
+              raise SystemExit("Content integrity failed:\n- " + "\n- ".join(errors))
+          print("Content integrity checks passed.")
+          PY
+
       - name: Compile Python sources
         shell: bash
         run: |
@@ -47,4 +128,40 @@ jobs:
         run: python eurojackpot_independent_verifier_v3_4.py --root .
 
       - name: Quick one-command workflow
-        run: python eurojackpot_one_click_v3_7.py --engine-mode audited --db EuroJackpot_CI.sqlite
+        env:
+          EUROJACKPOT_DATA_DIR: ${{ runner.temp }}/eurojackpot-data
+        run: >
+          python eurojackpot_one_click_v3_7.py
+          --engine-mode audited
+          --db EuroJackpot_CI.sqlite
+          --output-dir outputs
+
+      - name: Ticket render smoke test
+        run: python run_eurojackpot_ticket_render_v3_6.py
+
+      - name: Adaptive learning self-test
+        run: python run_eurojackpot_learning_selftest_v3_8.py
+
+      - name: History walk-forward training smoke test
+        env:
+          EUROJACKPOT_DATA_DIR: ${{ runner.temp }}/eurojackpot-train
+        run: >
+          python eurojackpot_learning_engine_v3_8.py train-history
+          --db ${{ runner.temp }}/eurojackpot-train/history.sqlite
+          --min-history 80
+          --max-draws 40
+
+      - name: Stable-edge search self-test
+        run: python eurojackpot_edge_engine_v3_8.py selftest
+
+      - name: Version helper smoke test
+        shell: bash
+        run: |
+          python - <<'PY'
+          from eurojackpot_paths import read_version, short_version, user_data_dir
+          version = read_version()
+          assert version == open("VERSION", encoding="utf-8").read().strip()
+          assert short_version(version).count(".") == 1
+          print("version", version, "short", short_version(version))
+          print("user_data_dir", user_data_dir())
+          PY

@@ -1,0 +1,365 @@
+{
+  "status": "PASS",
+  "total_history_draws": 975,
+  "warmup_draws": 80,
+  "trained_draws": 895,
+  "first_train_date": "2013-10-04",
+  "last_train_date": "2026-07-24",
+  "avg_main_hits": 0.45363128491620114,
+  "avg_euro_hits": 0.3642458100558659,
+  "success_rate": 0.4011173184357542,
+  "uniform_main_baseline": 0.5,
+  "uniform_euro_baseline": 0.3333333333333333,
+  "main_vs_baseline": -0.04636871508379886,
+  "euro_vs_baseline": 0.03091247672253261,
+  "next_experimental_line": {
+    "main": [
+      5,
+      11,
+      27,
+      31,
+      48
+    ],
+    "euro": [
+      3,
+      10
+    ],
+    "source": "adaptive-learning-weights",
+    "experimental": true
+  },
+  "timeline_sample": [
+    {
+      "draw_index": 279,
+      "draw_date": "2017-07-28",
+      "predicted_main": [
+        1,
+        6,
+        19,
+        33,
+        39
+      ],
+      "predicted_euro": [
+        5,
+        7
+      ],
+      "actual_main": [
+        14,
+        18,
+        26,
+        40,
+        45
+      ],
+      "actual_euro": [
+        1,
+        5
+      ],
+      "main_hits": 0,
+      "euro_hits": 1,
+      "success": false,
+      "avg_main_hits_so_far": 0.51,
+      "avg_euro_hits_so_far": 0.37,
+      "success_rate_so_far": 0.42
+    },
+    {
+      "draw_index": 379,
+      "draw_date": "2019-06-28",
+      "predicted_main": [
+        1,
+        19,
+        33,
+        39,
+        40
+      ],
+      "predicted_euro": [
+        5,
+        7
+      ],
+      "actual_main": [
+        18,
+        25,
+        26,
+        35,
+        38
+      ],
+      "actual_euro": [
+        5,
+        6
+      ],
+      "main_hits": 0,
+      "euro_hits": 1,
+      "success": false,
+      "avg_main_hits_so_far": 0.48,
+      "avg_euro_hits_so_far": 0.41,
+      "success_rate_so_far": 0.41333333333333333
+    },
+    {
+      "draw_index": 479,
+      "draw_date": "2021-05-28",
+      "predicted_main": [
+        1,
+        19,
+        33,
+        39,
+        40
+      ],
+      "predicted_euro": [
+        5,
+        7
+      ],
+      "actual_main": [
+        15,
+        26,
+        35,
+        37,
+        43
+      ],
+      "actual_euro": [
+        3,
+        8
+      ],
+      "main_hits": 0,
+      "euro_hits": 0,
+      "success": false,
+      "avg_main_hits_so_far": 0.4875,
+      "avg_euro_hits_so_far": 0.4025,
+      "success_rate_so_far": 0.42
+    },
+    {
+      "draw_index": 579,
+      "draw_date": "2022-10-11",
+      "predicted_main": [
+        2,
+        5,
+        26,
+        31,
+        43
+      ],
+      "predicted_euro": [
+        7,
+        10
+      ],
+      "actual_main": [
+        7,
+        35,
+        36,
+        39,
+        47
+      ],
+      "actual_euro": [
+        3,
+        8
+      ],
+      "main_hits": 0,
+      "euro_hits": 0,
+      "success": false,
+      "avg_main_hits_so_far": 0.458,
+      "avg_euro_hits_so_far": 0.384,
+      "success_rate_so_far": 0.392
+    },
+    {
+      "draw_index": 679,
+      "draw_date": "2023-09-26",
+      "predicted_main": [
+        5,
+        11,
+        12,
+        15,
+        21
+      ],
+      "predicted_euro": [
+        3,
+        10
+      ],
+      "actual_main": [
+        23,
+        24,
+        38,
+        42,
+        44
+      ],
+      "actual_euro": [
+        1,
+        10
+      ],
+      "main_hits": 0,
+      "euro_hits": 1,
+      "success": false,
+      "avg_main_hits_so_far": 0.44333333333333336,
+      "avg_euro_hits_so_far": 0.37333333333333335,
+      "success_rate_so_far": 0.385
+    },
+    {
+      "draw_index": 779,
+      "draw_date": "2024-09-10",
+      "predicted_main": [
+        5,
+        11,
+        12,
+        15,
+        21
+      ],
+      "predicted_euro": [
+        3,
+        10
+      ],
+      "actual_main": [
+        7,
+        10,
+        31,
+        41,
+        46
+      ],
+      "actual_euro": [
+        1,
+        5
+      ],
+      "main_hits": 0,
+      "euro_hits": 0,
+      "success": false,
+      "avg_main_hits_so_far": 0.45571428571428574,
+      "avg_euro_hits_so_far": 0.38,
+      "success_rate_so_far": 0.4
+    },
+    {
+      "draw_index": 879,
+      "draw_date": "2025-08-26",
+      "predicted_main": [
+        11,
+        15,
+        21,
+        30,
+        31
+      ],
+      "predicted_euro": [
+        3,
+        10
+      ],
+      "actual_main": [
+        8,
+        14,
+        21,
+        26,
+        35
+      ],
+      "actual_euro": [
+        4,
+        8
+      ],
+      "main_hits": 1,
+      "euro_hits": 0,
+      "success": true,
+      "avg_main_hits_so_far": 0.4525,
+      "avg_euro_hits_so_far": 0.3775,
+      "success_rate_so_far": 0.40125
+    },
+    {
+      "draw_index": 974,
+      "draw_date": "2026-07-24",
+      "predicted_main": [
+        11,
+        12,
+        15,
+        21,
+        30
+      ],
+      "predicted_euro": [
+        3,
+        10
+      ],
+      "actual_main": [
+        4,
+        6,
+        8,
+        17,
+        22
+      ],
+      "actual_euro": [
+        7,
+        10
+      ],
+      "main_hits": 0,
+      "euro_hits": 1,
+      "success": false,
+      "avg_main_hits_so_far": 0.45363128491620114,
+      "avg_euro_hits_so_far": 0.3642458100558659,
+      "success_rate_so_far": 0.4011173184357542
+    }
+  ],
+  "top_main": [
+    {
+      "number": 31,
+      "weight": 1.3121
+    },
+    {
+      "number": 5,
+      "weight": 1.2985
+    },
+    {
+      "number": 27,
+      "weight": 1.2403
+    },
+    {
+      "number": 48,
+      "weight": 1.2403
+    },
+    {
+      "number": 11,
+      "weight": 1.1843
+    },
+    {
+      "number": 15,
+      "weight": 1.1843
+    },
+    {
+      "number": 21,
+      "weight": 1.1843
+    },
+    {
+      "number": 30,
+      "weight": 1.1843
+    },
+    {
+      "number": 12,
+      "weight": 1.172
+    },
+    {
+      "number": 50,
+      "weight": 1.1167
+    }
+  ],
+  "top_euro": [
+    {
+      "number": 3,
+      "weight": 1.7049
+    },
+    {
+      "number": 10,
+      "weight": 1.7049
+    },
+    {
+      "number": 11,
+      "weight": 1.1829
+    },
+    {
+      "number": 12,
+      "weight": 1.1829
+    },
+    {
+      "number": 1,
+      "weight": 0.966
+    },
+    {
+      "number": 2,
+      "weight": 0.9281
+    },
+    {
+      "number": 9,
+      "weight": 0.9281
+    },
+    {
+      "number": 6,
+      "weight": 0.7902
+    }
+  ],
+  "statement": "Walk-forward training used only prior official draws to predict each next draw, then updated adaptive research weights from hits and misses. Deployed jackpot probabilities remain uniform."
+}

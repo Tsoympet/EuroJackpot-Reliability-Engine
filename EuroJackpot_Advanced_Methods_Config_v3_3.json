@@ -1,16 +1,25 @@
-$ErrorActionPreference = "Stop"
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $Root
-
-py -3 -m venv build-runtime
-& ".\build-runtime\Scripts\python.exe" -m pip install --upgrade pip
-& ".\build-runtime\Scripts\python.exe" -m pip install pyinstaller -r EuroJackpot_Reliability_Engine_v3_8_requirements.txt
-
-& ".\build-runtime\Scripts\pyinstaller.exe" --noconfirm --clean EuroJackpotEngine_v3_8.spec
-
-$ISCC = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-if (-not $ISCC) {
-    Write-Host "PyInstaller build completed. Install Inno Setup and run EuroJackpotEngine_v3_8.iss to create the installer."
-    exit 0
+{
+  "version": "3.3",
+  "generated": "2026-07-26",
+  "deployment_mode": "uniform",
+  "uniform_floor_for_research_ensembles": 0.4,
+  "sequential_evalue_threshold": 20.0,
+  "familywise_alpha": 0.05,
+  "conformal_alpha": 0.1,
+  "prospective_registry": "EuroJackpot_Prospective_Prediction_Registry_v3_3.jsonl",
+  "mandatory_gates": [
+    "Prospective frozen registry",
+    "Correct rule-era simulation",
+    "Lower Brier than uniform",
+    "Lower log loss than uniform",
+    "Calibration within tolerance",
+    "Positive result in every predefined period",
+    "Block-bootstrap interval above zero",
+    "Synthetic-null corrected p <0.05",
+    "Uniform excluded from Model Confidence Set",
+    "Sequential e-value \u226520",
+    "Structural anomaly replicated prospectively",
+    "Stable advantage on future draws"
+  ],
+  "advanced_module": "eurojackpot_advanced_methods_v3_3.py"
 }
-& $ISCC.Source EuroJackpotEngine_v3_8.iss
