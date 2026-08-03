@@ -66,13 +66,19 @@ python eurojackpot_one_click_v3_7.py --engine-mode full
 
 ### Adaptive AI learning (research only)
 
-Each prediction is frozen for later scoring. After the official draw, score the result so the learner can reinforce hits and damp misses:
+Train the learner on official EuroJackpot history (walk-forward: predict each next draw using only earlier draws, then learn from the real result):
+
+```bash
+python run_eurojackpot_history_training_v3_8.py
+```
+
+Each live prediction is also frozen for later scoring. After the official draw, score the result so the learner can reinforce hits and damp misses:
 
 ```bash
 python eurojackpot_post_draw.py --draw-date 2026-07-28 --main 4,32,36,41,47 --euro 5,9
 ```
 
-Or use **AI Learning → Score Official Draw** in the desktop app.
+Or use **AI Learning → Train on History / Score Official Draw** in the desktop app.
 
 Adaptive weights re-rank experimental portfolios over time. The deployed champion remains exact-uniform; learning never changes the mathematical jackpot odds of a unique line.
 

@@ -25,6 +25,8 @@ EuroJackpot_CI.sqlite
 EuroJackpot_Learning_SelfTest.sqlite
 EuroJackpot_Learning_SelfTest.sqlite-*
 EuroJackpot_Learning_SelfTest_v3_8.json
+EuroJackpot_Learning_History.sqlite
+EuroJackpot_Learning_History.sqlite-*
 
 # Generated local outputs
 outputs/*.png

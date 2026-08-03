@@ -22,7 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from eurojackpot_jackpot_state_v3_5 import import_state, latest_state
-from eurojackpot_learning_engine_v3_8 import learning_status, score_draw_result
+from eurojackpot_learning_engine_v3_8 import learning_status, score_draw_result, train_on_history
 from eurojackpot_one_click_v3_7 import build_parser as workflow_parser
 from eurojackpot_one_click_v3_7 import execute as execute_workflow
 from eurojackpot_operational_v3_4 import verify_wheel_csv
@@ -195,7 +195,8 @@ class EuroJackpotDesktop(tk.Tk):
         top = ttk.Frame(self.learning_tab, padding=12)
         top.pack(fill="x")
         ttk.Button(top, text="Score Official Draw", style="Primary.TButton", command=self.score_official_draw).pack(side="left")
-        ttk.Button(top, text="Refresh Learning", command=self.refresh_learning).pack(side="left", padx=6)
+        ttk.Button(top, text="Train on History", command=self.train_on_history).pack(side="left", padx=6)
+        ttk.Button(top, text="Refresh Learning", command=self.refresh_learning).pack(side="left")
 
         self.learning_summary = tk.Text(self.learning_tab, height=10, wrap="word", font=("Segoe UI", 11))
         self.learning_summary.pack(fill="x", padx=12, pady=(0, 8))
@@ -505,6 +506,44 @@ class EuroJackpotDesktop(tk.Tk):
                     event["created_at_utc"],
                 ),
             )
+
+    def train_on_history(self) -> None:
+        if not messagebox.askyesno(
+            "Train on history",
+            "Walk-forward train the AI on official EuroJackpot history?\n\n"
+            "For each past draw it predicts using only earlier draws, then learns from the real result.\n"
+            "This can take a minute or two.",
+        ):
+            return
+
+        def worker() -> None:
+            try:
+                self.events.put(("log", "Starting historical walk-forward training…"))
+                result = train_on_history(
+                    DB_PATH,
+                    HISTORY,
+                    min_history=80,
+                    reset=True,
+                    progress_every=100,
+                )
+                report = OUTPUT_DIR / "EuroJackpot_History_Training_Report_v3_8.json"
+                report.write_text(json.dumps(result, indent=2), encoding="utf-8")
+                # Keep a dedicated copy under engine/ for inspection.
+                ENGINE_OUT_DIR.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(DB_PATH, ENGINE_OUT_DIR / "EuroJackpot_Learning_History.sqlite")
+                self.events.put((
+                    "log",
+                    (
+                        f"History training done: {result['trained_draws']} draws, "
+                        f"avg main hits {result['avg_main_hits']:.3f}, "
+                        f"success rate {result['success_rate']:.1%}. Report: {report}"
+                    ),
+                ))
+                self.events.put(("done", {"ticket_image": None, "training": result}))
+            except Exception:
+                self.events.put(("error", traceback.format_exc()))
+
+        self._start_thread(worker, "Training AI on history…")
 
     def score_official_draw(self) -> None:
         dialog = tk.Toplevel(self)

@@ -142,6 +142,15 @@ jobs:
       - name: Adaptive learning self-test
         run: python run_eurojackpot_learning_selftest_v3_8.py
 
+      - name: History walk-forward training smoke test
+        env:
+          EUROJACKPOT_DATA_DIR: ${{ runner.temp }}/eurojackpot-train
+        run: >
+          python eurojackpot_learning_engine_v3_8.py train-history
+          --db ${{ runner.temp }}/eurojackpot-train/history.sqlite
+          --min-history 80
+          --max-draws 40
+
       - name: Version helper smoke test
         shell: bash
         run: |

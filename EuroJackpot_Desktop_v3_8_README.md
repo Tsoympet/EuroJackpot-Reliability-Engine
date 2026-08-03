@@ -4,7 +4,10 @@ The desktop application exposes the complete project through one graphical inter
 
 ## AI Learning tab
 
-Use **Score Official Draw** after each result so the adaptive learner can:
+Use **Train on History** to walk-forward train the AI on official EuroJackpot draws:
+it predicts each next draw using only earlier history, then learns from the real result.
+
+Use **Score Official Draw** after each new result so the adaptive learner can:
 
 - reinforce numbers from successful hits
 - damp numbers from misses

@@ -12,7 +12,6 @@ experimental research ranking / confidence tracking.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import sqlite3
@@ -21,6 +20,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
+from eurojackpot_advanced_methods_v3_3 import load_canonical_history
 from eurojackpot_operational_v3_4 import (
     OperationalDatabase,
     PredictionRecord,
@@ -667,6 +667,203 @@ def suggest_research_line(db_path: str | Path, *, main_k: int = 5, euro_k: int =
     }
 
 
+def _frequency_scores(past_draws: Sequence[Any], *, pool: str) -> dict[int, float]:
+    """Recency-weighted frequency from past official draws only (no leakage)."""
+    size = MAIN_POOL if pool == "main" else EURO_POOL
+    scores = {n: 0.0 for n in range(1, size + 1)}
+    if not past_draws:
+        return {n: 1.0 for n in scores}
+    n = len(past_draws)
+    for idx, draw in enumerate(past_draws):
+        # Newer draws count more.
+        age_weight = 0.55 + 0.45 * ((idx + 1) / n)
+        values = draw.main if pool == "main" else draw.euro
+        euro_pool = getattr(draw, "euro_pool", EURO_POOL)
+        for value in values:
+            if pool == "euro" and value > euro_pool:
+                continue
+            scores[int(value)] += age_weight
+    # Laplace smoothing toward uniform.
+    for key in scores:
+        scores[key] += 1.0
+    mean = sum(scores.values()) / len(scores)
+    return {k: (v / mean) if mean else 1.0 for k, v in scores.items()}
+
+
+def predict_from_past_draws(
+    db_path: str | Path,
+    past_draws: Sequence[Any],
+    *,
+    euro_pool: int = EURO_POOL,
+) -> dict[str, Any]:
+    """
+    Build one experimental line using only information available before the next draw:
+    blend of historical frequency and current adaptive weights.
+    """
+    ensure_learning_schema(db_path)
+    adaptive = get_weights(db_path)
+    freq_main = _frequency_scores(past_draws, pool="main")
+    freq_euro = _frequency_scores(past_draws, pool="euro")
+
+    main_score = {
+        n: 0.55 * freq_main.get(n, 1.0) + 0.45 * adaptive["main"].get(n, 1.0)
+        for n in range(1, MAIN_POOL + 1)
+    }
+    euro_score = {
+        n: 0.55 * freq_euro.get(n, 1.0) + 0.45 * adaptive["euro"].get(n, 1.0)
+        for n in range(1, euro_pool + 1)
+    }
+    main = [n for n, _ in sorted(main_score.items(), key=lambda kv: (-kv[1], kv[0]))[:5]]
+    euro = [n for n, _ in sorted(euro_score.items(), key=lambda kv: (-kv[1], kv[0]))[:2]]
+    return {
+        "main": sorted(main),
+        "euro": sorted(euro),
+        "main_score": {str(k): round(v, 4) for k, v in main_score.items()},
+        "euro_score": {str(k): round(v, 4) for k, v in euro_score.items()},
+        "source": "history-frequency+adaptive-weights",
+        "past_draws_used": len(past_draws),
+        "experimental": True,
+    }
+
+
+def train_on_history(
+    db_path: str | Path,
+    history_path: str | Path,
+    *,
+    min_history: int = 80,
+    max_draws: int | None = None,
+    reset: bool = True,
+    progress_every: int = 50,
+) -> dict[str, Any]:
+    """
+    Walk-forward train the adaptive learner on official EuroJackpot history.
+
+    For each draw t (after warm-up):
+      1. predict using only draws[:t]
+      2. freeze that prediction for draw t
+      3. score against the official result at t
+      4. update adaptive weights from success/failure
+    """
+    path = Path(db_path)
+    if reset:
+        for candidate in (path, Path(str(path) + "-wal"), Path(str(path) + "-shm")):
+            if candidate.exists():
+                candidate.unlink()
+    ensure_learning_schema(path)
+    draws = load_canonical_history(history_path)
+    if len(draws) <= min_history:
+        raise ValueError(f"Need more than {min_history} historical draws; found {len(draws)}")
+
+    end = len(draws) if max_draws is None else min(len(draws), min_history + max_draws)
+    code_path = Path(__file__)
+    rolling_main: list[int] = []
+    rolling_euro: list[int] = []
+    rolling_success: list[int] = []
+    timeline: list[dict[str, Any]] = []
+
+    for t in range(min_history, end):
+        past = draws[:t]
+        target = draws[t]
+        prediction = predict_from_past_draws(path, past, euro_pool=target.euro_pool)
+        freeze_workflow_prediction(
+            path,
+            target_draw=target.draw_date,
+            data_cutoff=past[-1].draw_date,
+            primary_main=prediction["main"],
+            primary_euro=prediction["euro"],
+            run_id=f"history-train-{target.draw_date}",
+            history_path=history_path,
+            code_path=code_path,
+            confidence_state="Walk-forward historical training; experimental research learner",
+        )
+        scored = score_draw_result(
+            path,
+            draw_date=target.draw_date,
+            result_main=target.main,
+            result_euro=target.euro,
+            source="canonical-history",
+        )
+        event = scored["predictions_scored"][0] if scored["predictions_scored"] else None
+        if event is None:
+            continue
+        rolling_main.append(int(event["main_hits"]))
+        rolling_euro.append(int(event["euro_hits"]))
+        rolling_success.append(1 if event["success"] else 0)
+        if progress_every and ((t - min_history + 1) % progress_every == 0 or t == end - 1):
+            timeline.append(
+                {
+                    "draw_index": t,
+                    "draw_date": target.draw_date,
+                    "predicted_main": prediction["main"],
+                    "predicted_euro": prediction["euro"],
+                    "actual_main": list(target.main),
+                    "actual_euro": list(target.euro),
+                    "main_hits": event["main_hits"],
+                    "euro_hits": event["euro_hits"],
+                    "success": event["success"],
+                    "avg_main_hits_so_far": sum(rolling_main) / len(rolling_main),
+                    "avg_euro_hits_so_far": sum(rolling_euro) / len(rolling_euro),
+                    "success_rate_so_far": sum(rolling_success) / len(rolling_success),
+                }
+            )
+
+    status = learning_status(path)
+    trained = end - min_history
+    result = {
+        "status": "PASS",
+        "history_file": str(history_path),
+        "database": str(path.resolve()),
+        "total_history_draws": len(draws),
+        "warmup_draws": min_history,
+        "trained_draws": trained,
+        "first_train_date": draws[min_history].draw_date if trained else None,
+        "last_train_date": draws[end - 1].draw_date if trained else None,
+        "avg_main_hits": (sum(rolling_main) / trained) if trained else None,
+        "avg_euro_hits": (sum(rolling_euro) / trained) if trained else None,
+        "success_rate": (sum(rolling_success) / trained) if trained else None,
+        "uniform_main_baseline": MAIN_BASELINE,
+        "uniform_euro_baseline": EURO_BASELINE,
+        "main_vs_baseline": (
+            (sum(rolling_main) / trained) - MAIN_BASELINE if trained else None
+        ),
+        "euro_vs_baseline": (
+            (sum(rolling_euro) / trained) - EURO_BASELINE if trained else None
+        ),
+        "timeline_sample": timeline[-12:],
+        "learning": status,
+        "next_experimental_line": suggest_research_line(path),
+        "statement": (
+            "Walk-forward training used only prior official draws to predict each next draw, "
+            "then updated adaptive research weights from hits and misses. "
+            "Deployed jackpot probabilities remain uniform."
+        ),
+    }
+    with sqlite3.connect(path) as conn:
+        conn.execute(
+            """
+            INSERT INTO learning_state(key, value_json, updated_at_utc)
+            VALUES ('history_training', ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                value_json=excluded.value_json,
+                updated_at_utc=excluded.updated_at_utc
+            """,
+            (
+                json.dumps(
+                    {
+                        "trained_draws": trained,
+                        "avg_main_hits": result["avg_main_hits"],
+                        "avg_euro_hits": result["avg_euro_hits"],
+                        "success_rate": result["success_rate"],
+                        "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+                    },
+                    sort_keys=True,
+                ),
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+    return result
+
+
 def rerank_portfolio_with_learning(
     db_path: str | Path,
     portfolio: Sequence[dict[str, Any]],
@@ -783,6 +980,19 @@ def build_parser() -> argparse.ArgumentParser:
     suggest = sub.add_parser("suggest", help="Suggest experimental line from adaptive weights")
     suggest.add_argument("--db", required=True)
 
+    train = sub.add_parser(
+        "train-history",
+        help="Walk-forward train on official EuroJackpot history (predict each next draw from the past only)",
+    )
+    train.add_argument("--db", default="EuroJackpot_Learning_History.sqlite")
+    train.add_argument(
+        "--history",
+        default=str(package_root() / "EuroJackpot_Canonical_History_v3.csv"),
+    )
+    train.add_argument("--min-history", type=int, default=80, help="Warm-up draws before first prediction")
+    train.add_argument("--max-draws", type=int, default=None, help="Optional cap on scored draws after warm-up")
+    train.add_argument("--no-reset", action="store_true", help="Continue training existing DB instead of resetting")
+
     test = sub.add_parser("selftest", help="Run learning-loop self-test")
     test.add_argument("--db", default="EuroJackpot_Learning_SelfTest.sqlite")
     return parser
@@ -808,6 +1018,16 @@ def main() -> None:
         return
     if args.command == "suggest":
         print(json.dumps(suggest_research_line(args.db), indent=2))
+        return
+    if args.command == "train-history":
+        result = train_on_history(
+            args.db,
+            args.history,
+            min_history=args.min_history,
+            max_draws=args.max_draws,
+            reset=not args.no_reset,
+        )
+        print(json.dumps(result, indent=2))
         return
     if args.command == "selftest":
         result = run_selftest(args.db)

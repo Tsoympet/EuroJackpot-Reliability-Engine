@@ -34,6 +34,7 @@ $IncludeNames = @(
     "eurojackpot_desktop_app_v3_8.py",
     "eurojackpot_weekday_effect_audit.py",
     "run_eurojackpot_learning_selftest_v3_8.py",
+    "run_eurojackpot_history_training_v3_8.py",
     "eurojackpot_full_history.txt",
     "EuroJackpot_Canonical_History_v3.csv",
     "EuroJackpot_Model_Results_v3_1_Audited.json",

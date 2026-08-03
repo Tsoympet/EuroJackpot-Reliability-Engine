@@ -31,3 +31,4 @@
   - re-ranks experimental portfolios when learning history exists
 - Deployed champion remains exact-uniform; AI updates research ranking/confidence only.
 - Added learning self-test `run_eurojackpot_learning_selftest_v3_8.py`.
+- Added walk-forward historical training (`train-history` / `run_eurojackpot_history_training_v3_8.py`) that predicts each next official draw from prior history only, then updates weights from the real result.
