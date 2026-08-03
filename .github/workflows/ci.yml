@@ -140,6 +140,7 @@ jobs:
         run: python run_eurojackpot_ticket_render_v3_6.py
 
       - name: Version helper smoke test
+        shell: bash
         run: |
           python - <<'PY'
           from eurojackpot_paths import read_version, short_version, user_data_dir
