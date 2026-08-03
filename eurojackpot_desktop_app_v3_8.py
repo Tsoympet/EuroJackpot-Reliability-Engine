@@ -22,6 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from eurojackpot_jackpot_state_v3_5 import import_state, latest_state
+from eurojackpot_edge_engine_v3_8 import run_edge_search
 from eurojackpot_learning_engine_v3_8 import learning_status, score_draw_result, train_on_history
 from eurojackpot_one_click_v3_7 import build_parser as workflow_parser
 from eurojackpot_one_click_v3_7 import execute as execute_workflow
@@ -196,7 +197,8 @@ class EuroJackpotDesktop(tk.Tk):
         top.pack(fill="x")
         ttk.Button(top, text="Score Official Draw", style="Primary.TButton", command=self.score_official_draw).pack(side="left")
         ttk.Button(top, text="Train on History", command=self.train_on_history).pack(side="left", padx=6)
-        ttk.Button(top, text="Refresh Learning", command=self.refresh_learning).pack(side="left")
+        ttk.Button(top, text="Hunt Stable Edge", command=self.hunt_stable_edge).pack(side="left")
+        ttk.Button(top, text="Refresh Learning", command=self.refresh_learning).pack(side="left", padx=6)
 
         self.learning_summary = tk.Text(self.learning_tab, height=10, wrap="word", font=("Segoe UI", 11))
         self.learning_summary.pack(fill="x", padx=12, pady=(0, 8))
@@ -506,6 +508,59 @@ class EuroJackpotDesktop(tk.Tk):
                     event["created_at_utc"],
                 ),
             )
+
+    def hunt_stable_edge(self) -> None:
+        if not messagebox.askyesno(
+            "Hunt stable edge",
+            "Run the multi-signal walk-forward edge search?\n\n"
+            "It tests hard for a draw-probability edge and builds a prize-value research portfolio.\n"
+            "Deployed jackpot odds stay uniform unless every gate passes.",
+        ):
+            return
+
+        def worker() -> None:
+            try:
+                self.events.put(("log", "Starting stable-edge search…"))
+                report = run_edge_search(
+                    HISTORY,
+                    min_history=120,
+                    train_learner=True,
+                    output_dir=ENGINE_OUT_DIR,
+                )
+                summary = OUTPUT_DIR / "EuroJackpot_Edge_Search_Summary_v3_8.json"
+                summary.write_text(
+                    json.dumps(
+                        {
+                            "overall_status": report["overall_status"],
+                            "decision": report["gates"]["decision"],
+                            "main_edge_detected": report["gates"]["main_edge_detected"],
+                            "euro_edge_detected": report["gates"]["euro_edge_detected"],
+                            "draw_probability_edge_detected": report["gates"][
+                                "draw_probability_edge_detected"
+                            ],
+                            "primary": report["primary_experimental_line"],
+                            "statement": report["statement"],
+                            "report_file": report["report_file"],
+                            "results_file": report["results_file"],
+                        },
+                        indent=2,
+                    ),
+                    encoding="utf-8",
+                )
+                self.events.put((
+                    "log",
+                    (
+                        f"Edge search done: {report['gates']['decision']} | "
+                        f"euro_edge={report['gates']['euro_edge_detected']} | "
+                        f"main_edge={report['gates']['main_edge_detected']} | "
+                        f"primary={report['primary_experimental_line']}"
+                    ),
+                ))
+                self.events.put(("done", {"ticket_image": None, "edge": report}))
+            except Exception:
+                self.events.put(("error", traceback.format_exc()))
+
+        self._start_thread(worker, "Hunting stable edge…")
 
     def train_on_history(self) -> None:
         if not messagebox.askyesno(

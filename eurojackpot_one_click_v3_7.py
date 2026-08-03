@@ -28,14 +28,15 @@ ROOT = package_root()
 VERSION = read_version(ROOT)
 WORKFLOW_VERSION = short_version(VERSION)
 BUNDLED_DB = ROOT / "EuroJackpot_Operational_v3_7.sqlite"
-DEFAULT_RESULTS = ROOT / "EuroJackpot_Model_Results_v3_1_Audited.json"
-FULL_ENGINE = ROOT / "eurojackpot_reliability_engine_v3.py"
-HISTORY = ROOT / "EuroJackpot_Canonical_History_v3.csv"
-TEMPLATE = ROOT / "EuroJackpot_Ticket_Template_v3_6.png"
 _USER = ensure_user_layout(BUNDLED_DB)
 DEFAULT_DB = _USER["db"]
 OUTPUT_DIR = _USER["outputs"]
 ENGINE_OUT_DIR = _USER["engine"]
+_EDGE_RESULTS = ENGINE_OUT_DIR / "EuroJackpot_Model_Results_Edge_v3_8.json"
+DEFAULT_RESULTS = _EDGE_RESULTS if _EDGE_RESULTS.exists() else ROOT / "EuroJackpot_Model_Results_v3_1_Audited.json"
+FULL_ENGINE = ROOT / "eurojackpot_reliability_engine_v3.py"
+HISTORY = ROOT / "EuroJackpot_Canonical_History_v3.csv"
+TEMPLATE = ROOT / "EuroJackpot_Ticket_Template_v3_6.png"
 SELECTED_POOL = [4, 21, 25, 27, 28, 35, 36, 37, 42, 44, 48, 50]
 
 

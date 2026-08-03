@@ -1,0 +1,154 @@
+{
+  "overall_status": "Partial research edge (pool-specific) + prize-value portfolio",
+  "decision": "KEEP_UNIFORM_JACKPOT_USE_EURO_RESEARCH_EDGE",
+  "draw_probability_edge_detected": false,
+  "main_edge_detected": false,
+  "euro_edge_detected": true,
+  "main_brier_improvement": -2.0151545590194053e-05,
+  "euro_brier_improvement": 0.0013512752194216326,
+  "main_bootstrap_ci": [
+    -3.897419954468778e-05,
+    1.518056126975626e-06
+  ],
+  "euro_bootstrap_ci": [
+    0.0008148078614390077,
+    0.001907111212276573
+  ],
+  "primary": {
+    "main": [
+      2,
+      21,
+      33,
+      40,
+      46
+    ],
+    "euro": [
+      5,
+      7
+    ],
+    "model_score": 0.971486215215583,
+    "anti_crowd_score": 0.54,
+    "novelty": 0.89,
+    "value_score": 0.762233222551182,
+    "approx_net_ev": -1.980629901022725,
+    "approx_gross_ev": 0.5193700989772749,
+    "line": 1,
+    "edge_type": "prize-value+research-rank",
+    "jackpot_odds_unchanged": true
+  },
+  "portfolio": [
+    {
+      "main": [
+        2,
+        21,
+        33,
+        40,
+        46
+      ],
+      "euro": [
+        5,
+        7
+      ],
+      "model_score": 0.971486215215583,
+      "anti_crowd_score": 0.54,
+      "novelty": 0.89,
+      "value_score": 0.762233222551182,
+      "approx_net_ev": -1.980629901022725,
+      "approx_gross_ev": 0.5193700989772749,
+      "line": 1,
+      "edge_type": "prize-value+research-rank",
+      "jackpot_odds_unchanged": true
+    },
+    {
+      "main": [
+        12,
+        28,
+        37,
+        40,
+        46
+      ],
+      "euro": [
+        5,
+        7
+      ],
+      "model_score": 0.971486215215583,
+      "anti_crowd_score": 0.54,
+      "novelty": 0.885,
+      "value_score": 0.761883222551182,
+      "approx_net_ev": -1.980629901022725,
+      "approx_gross_ev": 0.5193700989772749,
+      "line": 2,
+      "edge_type": "prize-value+research-rank",
+      "jackpot_odds_unchanged": true
+    },
+    {
+      "main": [
+        7,
+        16,
+        25,
+        34,
+        43
+      ],
+      "euro": [
+        5,
+        7
+      ],
+      "model_score": 0.971486215215583,
+      "anti_crowd_score": 0.49,
+      "novelty": 0.9125,
+      "value_score": 0.7576761873470574,
+      "approx_net_ev": -1.948570018369807,
+      "approx_gross_ev": 0.5514299816301931,
+      "line": 3,
+      "edge_type": "prize-value+research-rank",
+      "jackpot_odds_unchanged": true
+    },
+    {
+      "main": [
+        5,
+        16,
+        27,
+        38,
+        49
+      ],
+      "euro": [
+        5,
+        7
+      ],
+      "model_score": 0.971486215215583,
+      "anti_crowd_score": 0.49,
+      "novelty": 0.91,
+      "value_score": 0.7575011873470574,
+      "approx_net_ev": -1.948570018369807,
+      "approx_gross_ev": 0.5514299816301931,
+      "line": 4,
+      "edge_type": "prize-value+research-rank",
+      "jackpot_odds_unchanged": true
+    },
+    {
+      "main": [
+        6,
+        15,
+        24,
+        33,
+        42
+      ],
+      "euro": [
+        5,
+        7
+      ],
+      "model_score": 0.971486215215583,
+      "anti_crowd_score": 0.49,
+      "novelty": 0.91,
+      "value_score": 0.7575011873470574,
+      "approx_net_ev": -1.948570018369807,
+      "approx_gross_ev": 0.5514299816301931,
+      "line": 5,
+      "edge_type": "prize-value+research-rank",
+      "jackpot_odds_unchanged": true
+    }
+  ],
+  "statement": "This engine searched hard for a stable out-of-sample draw-probability edge. A stable out-of-sample edge was detected on Euro numbers, but not on main numbers. Jackpot odds stay uniform; research ranking may use non-uniform Euro probabilities plus the prize-value portfolio layer. Unique-line jackpot probability remains 1/139,838,160 unless deployment gates pass.",
+  "report_file": "/tmp/ej-edge2/engine/EuroJackpot_Edge_Search_Report_v3_8.json",
+  "results_file": "/tmp/ej-edge2/engine/EuroJackpot_Model_Results_Edge_v3_8.json"
+}

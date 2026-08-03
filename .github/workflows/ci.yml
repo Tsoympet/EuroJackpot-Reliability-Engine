@@ -151,6 +151,9 @@ jobs:
           --min-history 80
           --max-draws 40
 
+      - name: Stable-edge search self-test
+        run: python eurojackpot_edge_engine_v3_8.py selftest
+
       - name: Version helper smoke test
         shell: bash
         run: |

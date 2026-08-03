@@ -32,3 +32,13 @@
 - Deployed champion remains exact-uniform; AI updates research ranking/confidence only.
 - Added learning self-test `run_eurojackpot_learning_selftest_v3_8.py`.
 - Added walk-forward historical training (`train-history` / `run_eurojackpot_history_training_v3_8.py`) that predicts each next official draw from prior history only, then updates weights from the real result.
+
+### Stable predictive edge hunt
+
+- Added `eurojackpot_edge_engine_v3_8.py`:
+  - multi-signal eligible stacking vs exact Uniform (walk-forward Brier / log-loss / period / bootstrap gates)
+  - pool-specific research edges (Euro has cleared the OOS battery; main has not)
+  - prize-value / anti-crowd portfolio layer for relative ranking
+  - fail-closed jackpot odds (`1/139,838,160`) unless both pools clear deployment gates
+- Desktop **AI Learning → Hunt Stable Edge** and `run_eurojackpot_edge_search_v3_8.py` runner.
+- One-click prefers `EuroJackpot_Model_Results_Edge_v3_8.json` when present.

@@ -82,6 +82,18 @@ Or use **AI Learning → Train on History / Score Official Draw** in the desktop
 
 Adaptive weights re-rank experimental portfolios over time. The deployed champion remains exact-uniform; learning never changes the mathematical jackpot odds of a unique line.
 
+### Stable predictive edge hunt (research only)
+
+Search for a walk-forward out-of-sample edge versus exact Uniform, then build a prize-value / anti-crowd research portfolio:
+
+```bash
+python run_eurojackpot_edge_search_v3_8.py
+```
+
+Or use **AI Learning → Hunt Stable Edge** in the desktop app.
+
+Gates are fail-closed: unique-line jackpot odds stay `1/139,838,160` unless both main and Euro pools clear the battery. A pool-specific research edge (currently strongest on Euro numbers) may still be used for ranking without rewriting jackpot odds.
+
 Generated ticket images, JSON reports and logs are written to the per-user data directory and registered in SQLite:
 
 - Linux/macOS: `~/.local/share/eurojackpot-engine/outputs`

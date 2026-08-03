@@ -15,6 +15,8 @@ Use **Score Official Draw** after each new result so the adaptive learner can:
 
 This is research tracking only. The deployed champion stays exact-uniform.
 
+Use **Hunt Stable Edge** to run the multi-signal walk-forward edge search against official history. It reports whether a draw-probability edge clears bootstrap gates and writes a prize-value research portfolio. Jackpot odds stay uniform unless every deployment gate passes.
+
 ## Main functions
 
 - Generate prediction using the audited whole-engine output
