@@ -42,3 +42,15 @@
   - fail-closed jackpot odds (`1/139,838,160`) unless both pools clear deployment gates
 - Desktop **AI Learning → Hunt Stable Edge** and `run_eurojackpot_edge_search_v3_8.py` runner.
 - One-click prefers `EuroJackpot_Model_Results_Edge_v3_8.json` when present.
+
+### Method audit and strengthening
+
+- Audited all prediction/probability methods across reliability v2/v3, advanced v3.3, edge v3.8, and learning.
+- Strengthened the edge primary stack with methods that beat Uniform alone OOS on Euro:
+  - `HierarchicalEra` (same euro-pool-size posterior)
+  - `DynamicLogit` (leak-free logistic-normal filter)
+  - `BetaBinomial`
+- Removed Hot/Cold/GapHazard from the euro primary stack after solo audits showed negative Brier.
+- Learning predictor now blends era-aware frequency + EWMA + adaptive weights.
+- Reliability v3 now emits explicit `deployed_next_probabilities` (exact-uniform unless validated).
+- `python eurojackpot_edge_engine_v3_8.py list-methods` prints the method catalog.

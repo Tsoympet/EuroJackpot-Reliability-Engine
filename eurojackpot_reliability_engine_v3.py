@@ -596,9 +596,15 @@ def main():
         'main_pool':ser(main_res),'euro_pool':ser(euro_res),'randomness_audit':{'main':random_main,'euro':random_euro},
         'overall_status':overall,
         'production_next_probabilities':{'main':{str(i+1):float(x) for i,x in enumerate(main_prod)},'euro':{str(i+1):float(x) for i,x in enumerate(euro_prod)}},
+        # Deployed odds stay exact-uniform unless acceptance criteria promote a non-uniform champion.
+        'deployed_next_probabilities':(
+            {'main':{str(i+1):float(x) for i,x in enumerate(main_prod)},'euro':{str(i+1):float(x) for i,x in enumerate(euro_prod)}}
+            if str(overall).startswith('Validated')
+            else {'main':{str(i+1):0.1 for i in range(50)},'euro':{str(i+1):float(1.0/6.0) for i in range(12)}}
+        ),
         'research_next_probabilities':{'main':{str(i+1):float(x) for i,x in enumerate(main_research)},'euro':{str(i+1):float(x) for i,x in enumerate(euro_research)}},
         'primary_experimental_line':portfolio[0],'portfolio':portfolio,'audit_findings':findings,
-        'interpretation':'A reliable draw-probability edge is established only if all prespecified tests pass. Otherwise production probabilities revert toward or fully to uniform; research ranks remain explicitly experimental.',
+        'interpretation':'A reliable draw-probability edge is established only if all prespecified tests pass. Otherwise production probabilities revert toward or fully to uniform; research ranks remain explicitly experimental. deployed_next_probabilities are exact-uniform unless overall_status is Validated.',
     }
     OUT_RESULTS.write_text(json.dumps(result,indent=2,ensure_ascii=False,default=lambda o: o.item() if isinstance(o,np.generic) else str(o)),encoding='utf-8')
     print(json.dumps({'overall_status':overall,'main_status':main_res['status'],'euro_status':euro_res['status'],'next_draw_date':target.isoformat(),'primary':portfolio[0],'files':[str(OUT_RESULTS),str(OUT_RANKING),str(OUT_PORTFOLIO),str(OUT_AUDIT),str(OUT_HISTORY)]},indent=2,default=lambda o: o.item() if isinstance(o,np.generic) else str(o)),flush=True)

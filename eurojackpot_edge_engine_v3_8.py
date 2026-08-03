@@ -75,31 +75,33 @@ SIGNAL_NAMES = (
     "Uniform",
     "FullFrequency",
     "DirichletShrink",
+    "BetaBinomial",
+    "HierarchicalEra",
     "Rolling30",
     "Rolling50",
     "Rolling100",
     "EWMA25",
     "EWMA50",
     "Momentum",
+    "DynamicLogit",
     "GapHazard",
     "Hot20",
     "Cold20",
     "LagFade",
     "WeekdayFreq",
     "PairAffinity",
+    "SpectralCooccur",
 )
-# Prespecified stack used for the primary edge battery (stable euro OOS result).
+# Prespecified primary euro stack: validated OOS signals only.
+# Hot/Cold/GapHazard removed after solo audits showed they hurt Brier vs Uniform.
 PRIMARY_SIGNAL_NAMES = (
     "Uniform",
-    "FullFrequency",
-    "Rolling30",
+    "HierarchicalEra",
+    "DynamicLogit",
+    "BetaBinomial",
+    "EWMA25",
     "Rolling50",
     "Rolling100",
-    "EWMA25",
-    "EWMA50",
-    "GapHazard",
-    "Hot20",
-    "Cold20",
     "PairAffinity",
 )
 
@@ -111,8 +113,11 @@ def _signal_matrix(
     active: int,
     *,
     draw_days: Sequence[str] | None = None,
+    era_ids: Sequence[int] | None = None,
 ) -> dict[str, NDArray[np.float64]]:
     """Past-only signals at time t (uses Y[:t] only)."""
+    from scipy.special import expit, logit
+
     hist = Y[:t, :active]
     d = active
     if t <= 0:
@@ -121,15 +126,21 @@ def _signal_matrix(
 
     counts = hist.sum(axis=0)
     uniform = np.full(d, k / d)
+    base = k / d
     # Mild empirical Bayes frequency.
-    full = safe_scale((counts + 3.0 * k / d) / (t + 3.0), k)
+    full = safe_scale((counts + 3.0 * base) / (t + 3.0), k)
     # Stronger Dirichlet shrinkage toward uniform (more stable on noisy main pool).
     prior = 12.0 if d >= 40 else 4.0
-    shrink = safe_scale((counts + prior * k / d) / (t + prior), k)
+    shrink = safe_scale((counts + prior * base) / (t + prior), k)
+    # Beta-Binomial posterior mean with uniform-centered prior.
+    bb_strength = 80.0 if d >= 40 else 40.0
+    alpha = bb_strength * base
+    beta_p = bb_strength * (1.0 - base)
+    beta_binomial = safe_scale((counts + alpha) / (t + alpha + beta_p), k)
 
     def rolling(window: int) -> NDArray[np.float64]:
         recent = hist[max(0, t - window):]
-        return safe_scale((recent.sum(axis=0) + 2.0 * k / d) / (len(recent) + 2.0), k)
+        return safe_scale((recent.sum(axis=0) + 2.0 * base) / (len(recent) + 2.0), k)
 
     def ewma(halflife: int) -> NDArray[np.float64]:
         decay = math.exp(math.log(0.5) / max(halflife, 1))
@@ -138,12 +149,43 @@ def _signal_matrix(
         for row in hist:
             acc = decay * acc + row
             w = decay * w + 1.0
-        return safe_scale((acc + 2.0 * k / d) / (w + 2.0), k)
+        return safe_scale((acc + 2.0 * base) / (w + 2.0), k)
 
     e25 = ewma(25)
     e50 = ewma(50)
     # Momentum: short-horizon lift over longer horizon, then renormalize.
-    mom = safe_scale(np.clip(e25 - e50 + (k / d), 1e-9, None), k)
+    mom = safe_scale(np.clip(e25 - e50 + base, 1e-9, None), k)
+
+    # Hierarchical / era-aware frequency (euro pool size eras; main uses global shrink).
+    hier = full.copy()
+    if era_ids is not None and t < len(era_ids):
+        target_era = int(era_ids[t])
+        mask = np.asarray([int(x) == target_era for x in era_ids[:t]], dtype=bool)
+        if int(mask.sum()) >= 20:
+            sub = hist[mask]
+            global_p = (counts + 40.0 * base) / (t + 40.0)
+            strength = 80.0
+            hier = safe_scale(
+                (sub.sum(axis=0) + strength * global_p) / (len(sub) + strength), k
+            )
+
+    # Logistic-normal dynamic filter: predict next draw BEFORE observing it.
+    p0 = base
+    shrink_m = 0.995 if d >= 40 else 0.99
+    process_var = 0.001 if d >= 40 else 0.003
+    m = np.full(d, float(logit(p0)))
+    v = np.full(d, 0.05 if d >= 40 else 0.10)
+    for row in hist:
+        m = shrink_m * m + (1.0 - shrink_m) * float(logit(p0))
+        v = shrink_m * shrink_m * v + process_var
+        p = expit(m)
+        h = p * (1.0 - p)
+        s = h * h * v + 1.0
+        gain = v * h / np.clip(s, 1e-12, None)
+        m = m + gain * (row - p)
+        v = np.clip((1.0 - gain * h) * v, 1e-6, 10.0)
+    m = shrink_m * m + (1.0 - shrink_m) * float(logit(p0))
+    dynamic = safe_scale(expit(m), k)
 
     # Gap / overdue hazard: longer gaps get mild boost (then renormalize).
     gaps = np.zeros(d)
@@ -152,30 +194,26 @@ def _signal_matrix(
         gaps[j] = (t - 1 - int(hits[-1])) if len(hits) else t
     expected_gap = d / max(k, 1)
     gap_raw = (gaps + 1.0) / (expected_gap + 1.0)
-    gap = safe_scale(gap_raw * (k / d), k)
+    gap = safe_scale(gap_raw * base, k)
 
     hot = rolling(20)
-    # Cold: invert recent frequency then rescale.
     cold_raw = 1.0 - (hot / max(hot.max(), 1e-9))
-    cold = safe_scale(cold_raw * (k / d), k)
+    cold = safe_scale(cold_raw * base, k)
 
-    # Lag fade: lightly down-weight numbers drawn in the last 1–2 draws.
     lag = full.copy()
     if t >= 2:
         recent_hits = hist[-2:].sum(axis=0)
         lag_raw = full * (1.0 - 0.12 * recent_hits)
         lag = safe_scale(np.clip(lag_raw, 1e-9, None), k)
 
-    # Weekday-conditioned frequency (Friday vs Tuesday), past-only.
     weekday = full.copy()
     if draw_days is not None and t < len(draw_days):
         target_day = draw_days[t]
         mask = np.asarray([day == target_day for day in draw_days[:t]], dtype=bool)
         if int(mask.sum()) >= 25:
             sub = hist[mask]
-            weekday = safe_scale((sub.sum(axis=0) + 2.0 * k / d) / (len(sub) + 2.0), k)
+            weekday = safe_scale((sub.sum(axis=0) + 2.0 * base) / (len(sub) + 2.0), k)
 
-    # Pair-affinity: average co-occurrence with currently strongest frequency numbers.
     top = np.argsort(full)[::-1][: max(8, k)]
     pair = np.zeros(d)
     if t >= 40:
@@ -191,23 +229,38 @@ def _signal_matrix(
     else:
         pair = full.copy()
 
+    # Spectral co-occurrence (principal eigenvector); noisy alone, eligibility may drop it.
+    if t >= 40:
+        co = hist.T @ hist
+        np.fill_diagonal(co, 0.0)
+        co = co + 1e-3
+        _vals, vecs = np.linalg.eigh(co)
+        spectral = safe_scale(np.abs(vecs[:, -1]) + 1e-6, k)
+    else:
+        spectral = full.copy()
+
     return {
         "Uniform": uniform,
         "FullFrequency": full,
         "DirichletShrink": shrink,
+        "BetaBinomial": beta_binomial,
+        "HierarchicalEra": hier,
         "Rolling30": rolling(30),
         "Rolling50": rolling(50),
         "Rolling100": rolling(100),
         "EWMA25": e25,
         "EWMA50": e50,
         "Momentum": mom,
+        "DynamicLogit": dynamic,
         "GapHazard": gap,
         "Hot20": hot,
         "Cold20": cold,
         "LagFade": lag,
         "WeekdayFreq": weekday,
         "PairAffinity": pair,
+        "SpectralCooccur": spectral,
     }
+
 
 
 def _stack_predict(
@@ -319,6 +372,7 @@ def evaluate_pool(
     refit_every: int | None = None,
     pool_name: str = "main",
     draw_days: Sequence[str] | None = None,
+    era_ids: Sequence[int] | None = None,
     signal_names: Sequence[str] | None = None,
 ) -> tuple[PoolMetrics, dict[str, float], NDArray[np.float64], dict[str, int]]:
     """
@@ -355,7 +409,12 @@ def evaluate_pool(
     for t in range(start, n):
         active = d_full if pool_name == "main" else EURO_POOL
         all_signals = _signal_matrix(
-            Y[:, :active], t, k, active, draw_days=draw_days
+            Y[:, :active],
+            t,
+            k,
+            active,
+            draw_days=draw_days,
+            era_ids=era_ids,
         )
         signals = {nme: all_signals[nme] for nme in names}
 
@@ -713,11 +772,24 @@ def run_edge_search(
         learner_blend = predict_from_past_draws(learner_db, draws, euro_pool=draws[-1].euro_pool)
 
     draw_days = [d.draw_day for d in draws]
+    # Euro-pool size eras (8/10/12) are the only verified operational breakpoints for inclusion rates.
+    euro_eras = [int(d.euro_pool) for d in draws]
+    main_eras = [1 for _ in draws]
     main_metrics, main_weights, main_p, main_wins = evaluate_pool(
-        main_Y, MAIN_K, start=min_history, pool_name="main", draw_days=draw_days
+        main_Y,
+        MAIN_K,
+        start=min_history,
+        pool_name="main",
+        draw_days=draw_days,
+        era_ids=main_eras,
     )
     euro_metrics, euro_weights, euro_p, euro_wins = evaluate_pool(
-        euro_Y, EURO_K, start=min_history, pool_name="euro", draw_days=draw_days
+        euro_Y,
+        EURO_K,
+        start=min_history,
+        pool_name="euro",
+        draw_days=draw_days,
+        era_ids=euro_eras,
     )
 
     # Blend final research probs lightly with learner suggestion masses if available.
@@ -808,6 +880,7 @@ def run_edge_search(
         "primary_experimental_line": portfolio[0] if portfolio else None,
         "portfolio": portfolio,
         "learner_blend_line": learner_blend,
+        "method_catalog": method_catalog(),
         "jackpot_combination_space": math.comb(50, 5) * math.comb(12, 2),
         "statement": (
             "This engine searched hard for a stable out-of-sample draw-probability edge. "
@@ -852,6 +925,37 @@ def run_edge_search(
     return report
 
 
+def method_catalog() -> dict[str, Any]:
+    """Inventory of probability methods used by the edge / research stack."""
+    return {
+        "deployed_champion": {
+            "Uniform": "Exact fair-draw inclusion probs (5/50, 2/12); unique-line 1/139838160",
+        },
+        "edge_signals": {
+            name: (
+                "Primary euro stack"
+                if name in PRIMARY_SIGNAL_NAMES
+                else "Research library (eligibility-gated)"
+            )
+            for name in SIGNAL_NAMES
+        },
+        "strengthened_methods": [
+            "HierarchicalEra - same euro-pool-size posterior shrunk to global",
+            "DynamicLogit - logistic-normal filter, predict-before-update (no leakage)",
+            "BetaBinomial - conjugate posterior mean with uniform-centered prior",
+            "SpectralCooccur - co-occurrence eigenvector (eligibility may drop)",
+        ],
+        "also_in_repo": [
+            "v3 reliability ML family (Logistic/GBM/RF/ExtraTrees/HistGBM/BayesianRidge)",
+            "v3 statistical family (Full/Rolling/EWMA/BetaBinomial/Hierarchical/DynamicState)",
+            "advanced v3.3 (HMM regimes, Ising, GP drift, conformal, robust stacking)",
+            "adaptive learning scores (era-frequency + EWMA + outcome weights)",
+            "prize-value / anti-crowd portfolio (does not change jackpot odds)",
+        ],
+        "policy": "Fail-closed: non-uniform deployment only if both pools clear OOS gates",
+    }
+
+
 def run_selftest() -> dict[str, Any]:
     root = package_root()
     history = root / "EuroJackpot_Canonical_History_v3.csv"
@@ -877,11 +981,15 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--output-dir", default=None)
     run.add_argument("--skip-learner", action="store_true")
     sub.add_parser("selftest", help="Smoke test edge engine")
+    sub.add_parser("list-methods", help="Print probability method catalog")
     return p
 
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.command == "list-methods":
+        print(json.dumps(method_catalog(), indent=2))
+        raise SystemExit(0)
     if args.command == "selftest":
         result = run_selftest()
         print(json.dumps(result, indent=2))

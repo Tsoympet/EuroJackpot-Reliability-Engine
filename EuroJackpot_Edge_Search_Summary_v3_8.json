@@ -4,16 +4,24 @@
   "draw_probability_edge_detected": false,
   "main_edge_detected": false,
   "euro_edge_detected": true,
-  "main_brier_improvement": -2.0151545590194053e-05,
-  "euro_brier_improvement": 0.0013512752194216326,
+  "main_brier_improvement": -1.863712937724693e-05,
+  "euro_brier_improvement": 0.0014773245811514346,
   "main_bootstrap_ci": [
-    -4.020980470511107e-05,
-    2.350435518138663e-08
+    -3.758891780567667e-05,
+    1.2679429233025188e-06
   ],
   "euro_bootstrap_ci": [
-    0.0008239303048475075,
-    0.0018835797787391283
+    0.0010521625908302581,
+    0.0019527783857150797
   ],
+  "euro_stack_weights": {
+    "Uniform": 0.4,
+    "HierarchicalEra": 0.1292491760926205,
+    "EWMA25": 0.17057074017223656,
+    "Rolling50": 0.20222302372390044,
+    "Rolling100": 0.09795706001124256,
+    "_shrink_alpha": 1.0
+  },
   "primary": {
     "main": [
       2,
@@ -23,15 +31,15 @@
       46
     ],
     "euro": [
-      3,
-      5
+      5,
+      7
     ],
-    "model_score": 0.9713089029005161,
-    "anti_crowd_score": 0.62,
+    "model_score": 0.9277576332067489,
+    "anti_crowd_score": 0.54,
     "novelty": 0.89,
-    "value_score": 0.5568929672304082,
-    "approx_net_ev": -2.0319257132673942,
-    "approx_gross_ev": 0.46807428673260587,
+    "value_score": 0.530811649828836,
+    "approx_net_ev": -1.980629901022725,
+    "approx_gross_ev": 0.5193700989772749,
     "line": 1,
     "edge_type": "prize-value+research-rank",
     "jackpot_odds_unchanged": true
@@ -46,15 +54,15 @@
         46
       ],
       "euro": [
-        3,
-        5
+        5,
+        7
       ],
-      "model_score": 0.9713089029005161,
-      "anti_crowd_score": 0.62,
+      "model_score": 0.9277576332067489,
+      "anti_crowd_score": 0.54,
       "novelty": 0.89,
-      "value_score": 0.5568929672304082,
-      "approx_net_ev": -2.0319257132673942,
-      "approx_gross_ev": 0.46807428673260587,
+      "value_score": 0.530811649828836,
+      "approx_net_ev": -1.980629901022725,
+      "approx_gross_ev": 0.5193700989772749,
       "line": 1,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
@@ -68,16 +76,38 @@
         46
       ],
       "euro": [
-        3,
+        5,
+        7
+      ],
+      "model_score": 0.9277576332067489,
+      "anti_crowd_score": 0.54,
+      "novelty": 0.885,
+      "value_score": 0.5304616498288359,
+      "approx_net_ev": -1.980629901022725,
+      "approx_gross_ev": 0.5193700989772749,
+      "line": 2,
+      "edge_type": "prize-value+research-rank",
+      "jackpot_odds_unchanged": true
+    },
+    {
+      "main": [
+        12,
+        28,
+        37,
+        40,
+        46
+      ],
+      "euro": [
+        4,
         5
       ],
-      "model_score": 0.9713089029005161,
+      "model_score": 0.8537190515164709,
       "anti_crowd_score": 0.62,
       "novelty": 0.885,
-      "value_score": 0.5565429672304082,
+      "value_score": 0.5277334536413171,
       "approx_net_ev": -2.0319257132673942,
       "approx_gross_ev": 0.46807428673260587,
-      "line": 2,
+      "line": 3,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
     },
@@ -90,16 +120,16 @@
         43
       ],
       "euro": [
-        3,
-        5
+        5,
+        7
       ],
-      "model_score": 0.9713089029005161,
-      "anti_crowd_score": 0.57,
+      "model_score": 0.9277576332067489,
+      "anti_crowd_score": 0.49,
       "novelty": 0.9125,
-      "value_score": 0.5488359320262837,
-      "approx_net_ev": -1.999865830614476,
-      "approx_gross_ev": 0.500134169385524,
-      "line": 3,
+      "value_score": 0.5227546146247113,
+      "approx_net_ev": -1.948570018369807,
+      "approx_gross_ev": 0.5514299816301931,
+      "line": 4,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
     },
@@ -112,37 +142,15 @@
         49
       ],
       "euro": [
-        3,
-        5
+        5,
+        7
       ],
-      "model_score": 0.9713089029005161,
-      "anti_crowd_score": 0.57,
+      "model_score": 0.9277576332067489,
+      "anti_crowd_score": 0.49,
       "novelty": 0.91,
-      "value_score": 0.5486609320262835,
-      "approx_net_ev": -1.999865830614476,
-      "approx_gross_ev": 0.500134169385524,
-      "line": 4,
-      "edge_type": "prize-value+research-rank",
-      "jackpot_odds_unchanged": true
-    },
-    {
-      "main": [
-        6,
-        15,
-        24,
-        33,
-        42
-      ],
-      "euro": [
-        3,
-        5
-      ],
-      "model_score": 0.9713089029005161,
-      "anti_crowd_score": 0.57,
-      "novelty": 0.91,
-      "value_score": 0.5486609320262835,
-      "approx_net_ev": -1.999865830614476,
-      "approx_gross_ev": 0.500134169385524,
+      "value_score": 0.5225796146247114,
+      "approx_net_ev": -1.948570018369807,
+      "approx_gross_ev": 0.5514299816301931,
       "line": 5,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true

@@ -692,6 +692,58 @@ def _frequency_scores(past_draws: Sequence[Any], *, pool: str) -> dict[int, floa
     return {k: (v / mean) if mean else 1.0 for k, v in scores.items()}
 
 
+def _era_frequency_scores(
+    past_draws: Sequence[Any],
+    *,
+    pool: str,
+    target_euro_pool: int,
+) -> dict[int, float]:
+    """Era-aware frequency: for euro, prefer same euro-pool-size history."""
+    size = MAIN_POOL if pool == "main" else min(EURO_POOL, target_euro_pool)
+    if pool == "main" or not past_draws:
+        return _frequency_scores(past_draws, pool=pool)
+    era = [d for d in past_draws if int(getattr(d, "euro_pool", EURO_POOL)) == int(target_euro_pool)]
+    use = era if len(era) >= 25 else list(past_draws)
+    scores = {n: 0.0 for n in range(1, size + 1)}
+    n = len(use)
+    for idx, draw in enumerate(use):
+        age_weight = 0.55 + 0.45 * ((idx + 1) / n)
+        for value in draw.euro:
+            if 1 <= int(value) <= size:
+                scores[int(value)] += age_weight
+    for key in scores:
+        scores[key] += 1.0
+    # Shrink era scores toward global frequency for stability.
+    global_scores = _frequency_scores(past_draws, pool="euro")
+    out = {}
+    for n in scores:
+        out[n] = 0.70 * scores[n] + 0.30 * global_scores.get(n, 1.0)
+    mean = sum(out.values()) / len(out)
+    return {k: (v / mean) if mean else 1.0 for k, v in out.items()}
+
+
+def _ewma_scores(past_draws: Sequence[Any], *, pool: str, halflife: int = 25) -> dict[int, float]:
+    """EWMA hit scores from past draws only."""
+    size = MAIN_POOL if pool == "main" else EURO_POOL
+    if not past_draws:
+        return {n: 1.0 for n in range(1, size + 1)}
+    decay = math.exp(math.log(0.5) / max(halflife, 1))
+    acc = {n: 0.0 for n in range(1, size + 1)}
+    w = 0.0
+    for draw in past_draws:
+        w = decay * w + 1.0
+        for n in acc:
+            acc[n] *= decay
+        values = draw.main if pool == "main" else draw.euro
+        for value in values:
+            if 1 <= int(value) <= size:
+                acc[int(value)] += 1.0
+    for n in acc:
+        acc[n] = (acc[n] + 1.0) / (w + 1.0)
+    mean = sum(acc.values()) / len(acc)
+    return {k: (v / mean) if mean else 1.0 for k, v in acc.items()}
+
+
 def predict_from_past_draws(
     db_path: str | Path,
     past_draws: Sequence[Any],
@@ -700,19 +752,31 @@ def predict_from_past_draws(
 ) -> dict[str, Any]:
     """
     Build one experimental line using only information available before the next draw:
-    blend of historical frequency and current adaptive weights.
+    blend of era-aware frequency, EWMA, and current adaptive weights.
     """
     ensure_learning_schema(db_path)
     adaptive = get_weights(db_path)
     freq_main = _frequency_scores(past_draws, pool="main")
-    freq_euro = _frequency_scores(past_draws, pool="euro")
+    freq_euro = _era_frequency_scores(
+        past_draws, pool="euro", target_euro_pool=euro_pool
+    )
+    ewma_main = _ewma_scores(past_draws, pool="main", halflife=40)
+    ewma_euro = _ewma_scores(past_draws, pool="euro", halflife=25)
 
     main_score = {
-        n: 0.55 * freq_main.get(n, 1.0) + 0.45 * adaptive["main"].get(n, 1.0)
+        n: (
+            0.35 * freq_main.get(n, 1.0)
+            + 0.25 * ewma_main.get(n, 1.0)
+            + 0.40 * adaptive["main"].get(n, 1.0)
+        )
         for n in range(1, MAIN_POOL + 1)
     }
     euro_score = {
-        n: 0.55 * freq_euro.get(n, 1.0) + 0.45 * adaptive["euro"].get(n, 1.0)
+        n: (
+            0.40 * freq_euro.get(n, 1.0)
+            + 0.30 * ewma_euro.get(n, 1.0)
+            + 0.30 * adaptive["euro"].get(n, 1.0)
+        )
         for n in range(1, euro_pool + 1)
     }
     main = [n for n, _ in sorted(main_score.items(), key=lambda kv: (-kv[1], kv[0]))[:5]]
@@ -722,7 +786,7 @@ def predict_from_past_draws(
         "euro": sorted(euro),
         "main_score": {str(k): round(v, 4) for k, v in main_score.items()},
         "euro_score": {str(k): round(v, 4) for k, v in euro_score.items()},
-        "source": "history-frequency+adaptive-weights",
+        "source": "era-frequency+ewma+adaptive-weights",
         "past_draws_used": len(past_draws),
         "experimental": True,
     }

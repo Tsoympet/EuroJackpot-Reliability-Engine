@@ -94,6 +94,12 @@ Or use **AI Learning → Hunt Stable Edge** in the desktop app.
 
 Gates are fail-closed: unique-line jackpot odds stay `1/139,838,160` unless both main and Euro pools clear the battery. A pool-specific research edge (currently strongest on Euro numbers) may still be used for ranking without rewriting jackpot odds.
 
+List the probability methods in the edge/research stack:
+
+```bash
+python eurojackpot_edge_engine_v3_8.py list-methods
+```
+
 Generated ticket images, JSON reports and logs are written to the per-user data directory and registered in SQLite:
 
 - Linux/macOS: `~/.local/share/eurojackpot-engine/outputs`
