@@ -14,6 +14,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
+from eurojackpot_learning_engine_v3_8 import (
+    freeze_workflow_prediction,
+    learning_status,
+    rerank_portfolio_with_learning,
+)
 from eurojackpot_operational_v3_4 import independent_combination_space, verify_wheel_csv
 from eurojackpot_paths import ensure_user_layout, package_root, read_version, short_version
 from eurojackpot_ticket_renderer_v3_6 import TicketPayload, ensure_ticket_schema, render_ticket
@@ -316,6 +321,12 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             raise WorkflowError(f"Audited result file not found: {result_path}")
 
     engine = load_engine_results(result_path)
+    learning_before = learning_status(db_path)
+    if getattr(args, "adaptive_rank", True) and (learning_before.get("events") or 0) > 0:
+        engine["portfolio"] = rerank_portfolio_with_learning(db_path, engine["portfolio"])
+        engine["adaptive_reranked"] = True
+    else:
+        engine["adaptive_reranked"] = False
     jackpot = latest_jackpot_state(db_path, args.jackpot)
     wheels = verify_wheels()
     db_check = database_integrity(db_path)
@@ -324,6 +335,13 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "history": history,
         "wheels": wheels,
         "database_before": db_check,
+        "learning_before": {
+            "events": learning_before.get("events"),
+            "successes": learning_before.get("successes"),
+            "failures": learning_before.get("failures"),
+            "success_rate": learning_before.get("success_rate"),
+        },
+        "adaptive_reranked": engine["adaptive_reranked"],
         "prediction_probabilities": {
             "main": 0.1,
             "euro": 1 / 6,
@@ -392,6 +410,20 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "validation": validation,
     }
     freeze_run(db_path, run_id, metadata, engine["portfolio"])
+    frozen = freeze_workflow_prediction(
+        db_path,
+        target_draw=str(engine["target_draw"]),
+        data_cutoff=history["last_date"],
+        primary_main=engine["portfolio"][0]["main"],
+        primary_euro=engine["portfolio"][0]["euro"],
+        run_id=run_id,
+        history_path=HISTORY,
+        code_path=Path(__file__),
+        confidence_state=(
+            "Uniform champion deployed; adaptive research learner will score this "
+            "prediction after the official draw"
+        ),
+    )
     render_ticket(payload, image_path, TEMPLATE, db_path=db_path)
 
     summary = {
@@ -411,10 +443,14 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "database": str(db_path),
         "result_file": str(result_path),
         "run_hash": run_hash,
+        "prediction_record_hash": frozen.record_hash,
+        "adaptive_reranked": engine["adaptive_reranked"],
+        "learning": learning_status(db_path),
         "validation": validation,
         "statement": (
-            "The engine selected an experimental portfolio. The deployed draw probabilities "
-            "remain uniform; every unique EuroJackpot line has the same jackpot probability."
+            "The engine selected an experimental portfolio. Adaptive AI will improve research "
+            "ranking after future hits and misses. Deployed jackpot probabilities remain uniform; "
+            "every unique EuroJackpot line has the same jackpot probability."
         ),
     }
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
@@ -451,6 +487,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Writable directory for full-engine research artifacts (default: user-data engine).",
     )
     parser.add_argument("--jackpot", default=None, help='Manual display value, e.g. "€120,000,000".')
+    parser.add_argument(
+        "--adaptive-rank",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Re-rank the experimental portfolio using adaptive learning weights when history exists.",
+    )
     return parser
 
 

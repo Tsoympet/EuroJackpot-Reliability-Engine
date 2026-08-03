@@ -22,6 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from eurojackpot_jackpot_state_v3_5 import import_state, latest_state
+from eurojackpot_learning_engine_v3_8 import learning_status, score_draw_result
 from eurojackpot_one_click_v3_7 import build_parser as workflow_parser
 from eurojackpot_one_click_v3_7 import execute as execute_workflow
 from eurojackpot_operational_v3_4 import verify_wheel_csv
@@ -114,6 +115,7 @@ class EuroJackpotDesktop(tk.Tk):
 
         self.dashboard_tab = ttk.Frame(self.tabs)
         self.prediction_tab = ttk.Frame(self.tabs)
+        self.learning_tab = ttk.Frame(self.tabs)
         self.jackpot_tab = ttk.Frame(self.tabs)
         self.models_tab = ttk.Frame(self.tabs)
         self.wheels_tab = ttk.Frame(self.tabs)
@@ -123,6 +125,7 @@ class EuroJackpotDesktop(tk.Tk):
 
         self.tabs.add(self.dashboard_tab, text="Dashboard")
         self.tabs.add(self.prediction_tab, text="Prediction & Ticket")
+        self.tabs.add(self.learning_tab, text="AI Learning")
         self.tabs.add(self.jackpot_tab, text="Jackpot State")
         self.tabs.add(self.models_tab, text="Models")
         self.tabs.add(self.wheels_tab, text="Coverage Wheels")
@@ -132,6 +135,7 @@ class EuroJackpotDesktop(tk.Tk):
 
         self._build_dashboard()
         self._build_prediction()
+        self._build_learning()
         self._build_jackpot()
         self._build_models()
         self._build_wheels()
@@ -149,8 +153,9 @@ class EuroJackpotDesktop(tk.Tk):
         buttons.pack(fill="x", padx=12, pady=6)
         ttk.Button(buttons, text="Generate Prediction (Quick)", style="Primary.TButton", command=self.run_quick).pack(side="left")
         ttk.Button(buttons, text="Run Full Engine", command=self.run_full).pack(side="left", padx=8)
-        ttk.Button(buttons, text="Import Jackpot JSON", command=self.import_jackpot_json).pack(side="left")
-        ttk.Button(buttons, text="View Latest Ticket", command=self.open_latest_ticket).pack(side="left", padx=8)
+        ttk.Button(buttons, text="Score Official Draw", command=self.score_official_draw).pack(side="left")
+        ttk.Button(buttons, text="Import Jackpot JSON", command=self.import_jackpot_json).pack(side="left", padx=8)
+        ttk.Button(buttons, text="View Latest Ticket", command=self.open_latest_ticket).pack(side="left")
 
         log_frame = ttk.LabelFrame(self.dashboard_tab, text="Live Run Log", padding=8)
         log_frame.pack(fill="both", expand=True, padx=12, pady=8)
@@ -185,6 +190,49 @@ class EuroJackpotDesktop(tk.Tk):
         self.ticket_canvas = tk.Canvas(right, bg="#e6e6e6", highlightthickness=0)
         self.ticket_canvas.pack(fill="both", expand=True)
         self.ticket_canvas.bind("<Configure>", lambda _event: self._render_ticket_preview())
+
+    def _build_learning(self) -> None:
+        top = ttk.Frame(self.learning_tab, padding=12)
+        top.pack(fill="x")
+        ttk.Button(top, text="Score Official Draw", style="Primary.TButton", command=self.score_official_draw).pack(side="left")
+        ttk.Button(top, text="Refresh Learning", command=self.refresh_learning).pack(side="left", padx=6)
+
+        self.learning_summary = tk.Text(self.learning_tab, height=10, wrap="word", font=("Segoe UI", 11))
+        self.learning_summary.pack(fill="x", padx=12, pady=(0, 8))
+
+        pane = ttk.Panedwindow(self.learning_tab, orient="horizontal")
+        pane.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        left = ttk.Frame(pane)
+        right = ttk.Frame(pane)
+        pane.add(left, weight=1)
+        pane.add(right, weight=2)
+
+        ttk.Label(left, text="Top Adaptive Main Weights", style="Heading.TLabel").pack(anchor="w")
+        self.learning_main_tree = ttk.Treeview(left, columns=("number", "weight"), show="headings", height=12)
+        self.learning_main_tree.heading("number", text="Number")
+        self.learning_main_tree.heading("weight", text="Weight")
+        self.learning_main_tree.column("number", width=90, anchor="center")
+        self.learning_main_tree.column("weight", width=110, anchor="center")
+        self.learning_main_tree.pack(fill="both", expand=True, pady=6)
+
+        ttk.Label(right, text="Recent Learning Events", style="Heading.TLabel").pack(anchor="w")
+        self.learning_events_tree = ttk.Treeview(
+            right,
+            columns=("draw", "main", "euro", "result", "reward", "when"),
+            show="headings",
+            height=12,
+        )
+        for col, label, width in [
+            ("draw", "Draw", 110),
+            ("main", "Main Hits", 90),
+            ("euro", "Euro Hits", 90),
+            ("result", "Outcome", 90),
+            ("reward", "Reward", 90),
+            ("when", "Scored UTC", 190),
+        ]:
+            self.learning_events_tree.heading(col, text=label)
+            self.learning_events_tree.column(col, width=width, anchor="center")
+        self.learning_events_tree.pack(fill="both", expand=True, pady=6)
 
     def _build_jackpot(self) -> None:
         top = ttk.Frame(self.jackpot_tab, padding=12)
@@ -370,6 +418,7 @@ class EuroJackpotDesktop(tk.Tk):
     def refresh_all(self) -> None:
         self.refresh_dashboard()
         self.refresh_prediction()
+        self.refresh_learning()
         self.refresh_jackpot()
         self.refresh_models()
         self.refresh_wheels()
@@ -388,6 +437,8 @@ class EuroJackpotDesktop(tk.Tk):
                 "SELECT * FROM workflow_runs_v3_7 ORDER BY created_at_utc DESC LIMIT 1"
             ).fetchone() if self._table_exists(conn, "workflow_runs_v3_7") else None
 
+        learn = learning_status(DB_PATH)
+        rate = "n/a" if learn["success_rate"] is None else f"{learn['success_rate']:.1%}"
         lines = [
             f"{APP_NAME} v{APP_VERSION}",
             "",
@@ -396,6 +447,8 @@ class EuroJackpotDesktop(tk.Tk):
             f"Registered models: {models}",
             f"Workflow runs: {runs}",
             f"Ticket artifacts: {artifacts}",
+            f"AI learning events: {learn['events']} (success {learn['successes']} / fail {learn['failures']}, rate {rate})",
+            "Champion remains exact-uniform; AI adapts research ranking only.",
             "",
         ]
         if last_run:
@@ -412,6 +465,95 @@ class EuroJackpotDesktop(tk.Tk):
 
         self.dashboard_summary.delete("1.0", "end")
         self.dashboard_summary.insert("1.0", "\n".join(lines))
+
+    def refresh_learning(self) -> None:
+        status = learning_status(DB_PATH)
+        rate = "n/a" if status["success_rate"] is None else f"{status['success_rate']:.1%}"
+        summary = [
+            "Adaptive AI Learning (research only)",
+            "",
+            f"Events scored: {status['events']}",
+            f"Successes: {status['successes']}",
+            f"Failures: {status['failures']}",
+            f"Success rate: {rate}",
+            f"Avg main hits: {status['avg_main_hits']}",
+            f"Avg euro hits: {status['avg_euro_hits']}",
+            f"Deployed champion: {status['deployed_champion']}",
+            "",
+            status["disclaimer"],
+            "",
+            "After each official draw, use Score Official Draw so the learner can reinforce hits and damp misses.",
+        ]
+        self.learning_summary.delete("1.0", "end")
+        self.learning_summary.insert("1.0", "\n".join(summary))
+
+        self.learning_main_tree.delete(*self.learning_main_tree.get_children())
+        for row in status["top_main"]:
+            self.learning_main_tree.insert("", "end", values=(row["number"], f"{row['weight']:.4f}"))
+
+        self.learning_events_tree.delete(*self.learning_events_tree.get_children())
+        for event in status["recent_events"]:
+            self.learning_events_tree.insert(
+                "",
+                "end",
+                values=(
+                    event["target_draw"],
+                    event["main_hits"],
+                    event["euro_hits"],
+                    "SUCCESS" if event["success"] else "FAIL",
+                    f"{float(event['reward']):+.3f}",
+                    event["created_at_utc"],
+                ),
+            )
+
+    def score_official_draw(self) -> None:
+        dialog = tk.Toplevel(self)
+        dialog.title("Score Official Draw")
+        dialog.transient(self)
+        dialog.grab_set()
+        dialog.resizable(False, False)
+
+        fields = ttk.Frame(dialog, padding=14)
+        fields.pack(fill="both", expand=True)
+        ttk.Label(fields, text="Draw date (YYYY-MM-DD)").grid(row=0, column=0, sticky="w", pady=4)
+        date_var = tk.StringVar()
+        ttk.Entry(fields, textvariable=date_var, width=28).grid(row=0, column=1, sticky="w", pady=4)
+        ttk.Label(fields, text="Main numbers (5 comma-separated)").grid(row=1, column=0, sticky="w", pady=4)
+        main_var = tk.StringVar()
+        ttk.Entry(fields, textvariable=main_var, width=28).grid(row=1, column=1, sticky="w", pady=4)
+        ttk.Label(fields, text="Euro numbers (2 comma-separated)").grid(row=2, column=0, sticky="w", pady=4)
+        euro_var = tk.StringVar()
+        ttk.Entry(fields, textvariable=euro_var, width=28).grid(row=2, column=1, sticky="w", pady=4)
+
+        def submit() -> None:
+            try:
+                main_nums = [int(x.strip()) for x in main_var.get().split(",") if x.strip()]
+                euro_nums = [int(x.strip()) for x in euro_var.get().split(",") if x.strip()]
+                result = score_draw_result(
+                    DB_PATH,
+                    draw_date=date_var.get().strip(),
+                    result_main=main_nums,
+                    result_euro=euro_nums,
+                    source="desktop-manual",
+                )
+                dialog.destroy()
+                self.refresh_all()
+                messagebox.showinfo(
+                    "Draw scored",
+                    (
+                        f"Predictions scored: {len(result['predictions_scored'])}\n"
+                        f"Workflow lines scored: {len(result['workflow_lines_scored'])}\n"
+                        f"Learning events: {result['learning']['events']}\n\n"
+                        f"{result['statement']}"
+                    ),
+                )
+            except Exception as exc:
+                messagebox.showerror("Score failed", str(exc))
+
+        buttons = ttk.Frame(fields)
+        buttons.grid(row=3, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side="right")
+        ttk.Button(buttons, text="Score & Learn", style="Primary.TButton", command=submit).pack(side="right", padx=8)
 
     def refresh_prediction(self) -> None:
         self.lines_tree.delete(*self.lines_tree.get_children())

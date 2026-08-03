@@ -2,6 +2,16 @@
 
 The desktop application exposes the complete project through one graphical interface.
 
+## AI Learning tab
+
+Use **Score Official Draw** after each result so the adaptive learner can:
+
+- reinforce numbers from successful hits
+- damp numbers from misses
+- re-rank future experimental portfolios
+
+This is research tracking only. The deployed champion stays exact-uniform.
+
 ## Main functions
 
 - Generate prediction using the audited whole-engine output

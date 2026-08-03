@@ -22,6 +22,9 @@ logs/
 *.sqlite-wal
 *.sqlite-shm
 EuroJackpot_CI.sqlite
+EuroJackpot_Learning_SelfTest.sqlite
+EuroJackpot_Learning_SelfTest.sqlite-*
+EuroJackpot_Learning_SelfTest_v3_8.json
 
 # Generated local outputs
 outputs/*.png

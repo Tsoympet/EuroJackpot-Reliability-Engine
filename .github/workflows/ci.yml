@@ -139,6 +139,9 @@ jobs:
       - name: Ticket render smoke test
         run: python run_eurojackpot_ticket_render_v3_6.py
 
+      - name: Adaptive learning self-test
+        run: python run_eurojackpot_learning_selftest_v3_8.py
+
       - name: Version helper smoke test
         shell: bash
         run: |

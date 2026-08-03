@@ -21,3 +21,13 @@
 ### Installer
 
 - Windows PowerShell installer copies an explicit runtime allowlist instead of the entire source tree.
+
+### Adaptive AI learning
+
+- Added `eurojackpot_learning_engine_v3_8.py` outcome learner:
+  - freezes one-click primary lines into the prediction registry
+  - scores official results via `eurojackpot_post_draw.py` or desktop **AI Learning**
+  - reinforces numbers after successful hits and dampens them after misses
+  - re-ranks experimental portfolios when learning history exists
+- Deployed champion remains exact-uniform; AI updates research ranking/confidence only.
+- Added learning self-test `run_eurojackpot_learning_selftest_v3_8.py`.
