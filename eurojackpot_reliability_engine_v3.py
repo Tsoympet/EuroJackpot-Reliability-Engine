@@ -4,10 +4,11 @@ import csv
 import importlib.util
 import json
 import math
+import os
 import sys
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -16,13 +17,29 @@ from scipy.special import expit, logit
 from scipy.stats import norm
 from sklearn.linear_model import LogisticRegression
 
-ROOT = Path(__file__).resolve().parent
+from eurojackpot_paths import ensure_user_layout, package_root, read_version
+
+ROOT = package_root()
 V2_PATH = ROOT / 'eurojackpot_reliability_engine.py'
-OUT_RESULTS = ROOT / 'EuroJackpot_Model_Results_v3.json'
-OUT_RANKING = ROOT / 'EuroJackpot_Next_Draw_Ranking_v3.csv'
-OUT_PORTFOLIO = ROOT / 'EuroJackpot_Diversified_Portfolio_v3.csv'
-OUT_AUDIT = ROOT / 'EuroJackpot_Audit_Findings_v3.csv'
-OUT_HISTORY = ROOT / 'EuroJackpot_Canonical_History_v3.csv'
+APP_VERSION = read_version(ROOT)
+
+
+def _resolve_output_dir() -> Path:
+    override = os.environ.get('EUROJACKPOT_OUTPUT_DIR')
+    if override:
+        path = Path(override).expanduser().resolve()
+    else:
+        path = ensure_user_layout()['engine']
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+OUT_DIR = _resolve_output_dir()
+OUT_RESULTS = OUT_DIR / 'EuroJackpot_Model_Results_v3.json'
+OUT_RANKING = OUT_DIR / 'EuroJackpot_Next_Draw_Ranking_v3.csv'
+OUT_PORTFOLIO = OUT_DIR / 'EuroJackpot_Diversified_Portfolio_v3.csv'
+OUT_AUDIT = OUT_DIR / 'EuroJackpot_Audit_Findings_v3.csv'
+OUT_HISTORY = OUT_DIR / 'EuroJackpot_Canonical_History_v3.csv'
 RNG_SEED = 20260726
 RNG = np.random.default_rng(RNG_SEED)
 
@@ -573,7 +590,7 @@ def main():
             'acceptance_criteria':r['criteria'],'status':r['status'],
         }
     result={
-        'engine_version':'3.0.0-audited','generated_on':'2026-07-26','next_draw_date':target.isoformat(),'random_seed':RNG_SEED,
+        'engine_version':f'{APP_VERSION}-research','generated_on':datetime.now(timezone.utc).date().isoformat(),'next_draw_date':target.isoformat(),'random_seed':RNG_SEED,
         'data':{'draws':len(draws),'first_date':draws[0].draw_date.isoformat(),'last_date':draws[-1].draw_date.isoformat(),'calendar_audit':cal_audit,'uploaded_crosscheck':{'matched':235,'tested':235,'mismatches':0},'history_file':str(OUT_HISTORY)},
         'known_operational_breakpoints':{'2014-10-10':'Euro pool 8 to 10','2022-03-25':'Euro pool 10 to 12; Tuesday draw introduced','2024-03-08':'Studio/set sensitivity breakpoint only; no verified draw-machine change assumed'},
         'main_pool':ser(main_res),'euro_pool':ser(euro_res),'randomness_audit':{'main':random_main,'euro':random_euro},

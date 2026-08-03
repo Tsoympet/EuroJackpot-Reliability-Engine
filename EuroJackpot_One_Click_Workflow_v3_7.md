@@ -46,7 +46,9 @@ python eurojackpot_one_click_v3_7.py --engine-mode audited
 
 ## Automatic outputs
 
-The `outputs` folder receives:
+Ticket images and run summaries are written to the per-user outputs directory
+(`~/.local/share/eurojackpot-engine/outputs` on Linux, `%LOCALAPPDATA%\EuroJackpotEngine\outputs` on Windows),
+or to `--output-dir` when provided. That folder receives:
 
 - `EuroJackpot_Ticket_<draw>_<hash>.png`
 - `EuroJackpot_Run_<draw>_<hash>.json`

@@ -36,3 +36,12 @@ installer-output/
 Thumbs.db
 .vscode/
 .idea/
+
+# Duplicate / generated ticket samples at repo root
+EuroJackpot_Automatic_Ticket_v3_7.png
+EuroJackpot_Ticket_2026-07-28_*.png
+# Local engine scratch (prefer user-data engine/)
+EuroJackpot_Model_Results_v3.json
+EuroJackpot_Next_Draw_Ranking_v3.csv
+EuroJackpot_Diversified_Portfolio_v3.csv
+EuroJackpot_Audit_Findings_v3.csv

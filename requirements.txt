@@ -1,9 +1,7 @@
 # EuroJackpot Reliability Engine — Python runtime dependencies
-#
-# Used by the research engines, ticket renderer, and desktop app.
-# Compatible with Python 3.10, 3.11, and 3.12.
+# Pinned to versions verified by CI on Python 3.10–3.12.
 
-numpy
-scipy
-scikit-learn
-Pillow
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.6.1
+Pillow==11.3.0

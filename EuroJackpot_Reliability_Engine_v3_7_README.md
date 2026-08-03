@@ -12,4 +12,4 @@ For a faster downstream-only run using the latest audited result:
 - Windows: `Run_EuroJackpot_QUICK.bat`
 - Linux/macOS: `./run_eurojackpot_quick.sh`
 
-Generated files are placed in the `outputs` directory and logged in the operational database.
+Generated files are placed in the per-user `outputs` directory (see `EUROJACKPOT_DATA_DIR` / platform defaults) and logged in the operational database.

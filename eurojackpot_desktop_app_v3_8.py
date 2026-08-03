@@ -13,7 +13,6 @@ import subprocess
 import sys
 import threading
 import traceback
-import webbrowser
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
@@ -26,48 +25,29 @@ from eurojackpot_jackpot_state_v3_5 import import_state, latest_state
 from eurojackpot_one_click_v3_7 import build_parser as workflow_parser
 from eurojackpot_one_click_v3_7 import execute as execute_workflow
 from eurojackpot_operational_v3_4 import verify_wheel_csv
+from eurojackpot_paths import ensure_user_layout, package_root, read_version, short_version
 
 
 APP_NAME = "EuroJackpot Reliability Engine"
-APP_VERSION = "3.8"
+APP_VERSION = read_version()
+APP_VERSION_SHORT = short_version(APP_VERSION)
 
-
-def resource_root() -> Path:
-    if getattr(sys, "frozen", False):
-        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
-    return Path(__file__).resolve().parent
-
-
-ROOT = resource_root()
+ROOT = package_root()
 BUNDLED_DB = ROOT / "EuroJackpot_Operational_v3_7.sqlite"
 TEMPLATE = ROOT / "EuroJackpot_Ticket_Template_v3_6.png"
 HISTORY = ROOT / "EuroJackpot_Canonical_History_v3.csv"
 FULL_ENGINE = ROOT / "eurojackpot_reliability_engine_v3.py"
 
-
-def user_data_dir() -> Path:
-    if os.name == "nt":
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
-        return base / "EuroJackpotEngine"
-    xdg = os.environ.get("XDG_DATA_HOME")
-    return (Path(xdg) if xdg else Path.home() / ".local" / "share") / "eurojackpot-engine"
-
-
-DATA_DIR = user_data_dir()
-OUTPUT_DIR = DATA_DIR / "outputs"
-DB_PATH = DATA_DIR / "EuroJackpot_Operational_v3_8.sqlite"
-LOG_DIR = DATA_DIR / "logs"
+_USER = ensure_user_layout(BUNDLED_DB)
+DATA_DIR = _USER["data"]
+OUTPUT_DIR = _USER["outputs"]
+DB_PATH = _USER["db"]
+LOG_DIR = _USER["logs"]
+ENGINE_OUT_DIR = _USER["engine"]
 
 
 def initialize_user_data() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    if not DB_PATH.exists():
-        if BUNDLED_DB.exists():
-            shutil.copy2(BUNDLED_DB, DB_PATH)
-        else:
-            DB_PATH.touch()
+    ensure_user_layout(BUNDLED_DB)
 
 
 def open_path(path: Path) -> None:
@@ -84,7 +64,7 @@ class EuroJackpotDesktop(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         initialize_user_data()
-        self.title(f"{APP_NAME} v{APP_VERSION}")
+        self.title(f"{APP_NAME} v{APP_VERSION_SHORT}")
         self.geometry("1280x820")
         self.minsize(1100, 700)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
@@ -345,7 +325,12 @@ class EuroJackpotDesktop(tk.Tk):
 
     def _workflow_args(self, mode: str, results: Path | None = None):
         parser = workflow_parser()
-        argv = ["--engine-mode", mode, "--db", str(DB_PATH)]
+        argv = [
+            "--engine-mode", mode,
+            "--db", str(DB_PATH),
+            "--output-dir", str(OUTPUT_DIR),
+            "--engine-out", str(ENGINE_OUT_DIR),
+        ]
         if results is not None:
             argv += ["--results", str(results)]
         return parser.parse_args(argv)
@@ -369,12 +354,15 @@ class EuroJackpotDesktop(tk.Tk):
             timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
             log_path = LOG_DIR / f"full_engine_{timestamp}.log"
             self.events.put(("log", f"Full-engine log: {log_path}"))
+            ENGINE_OUT_DIR.mkdir(parents=True, exist_ok=True)
+            os.environ["EUROJACKPOT_OUTPUT_DIR"] = str(ENGINE_OUT_DIR)
             with log_path.open("w", encoding="utf-8") as log, redirect_stdout(log), redirect_stderr(log):
                 runpy.run_path(str(FULL_ENGINE), run_name="__main__")
-            generated = ROOT / "EuroJackpot_Model_Results_v3.json"
+            generated = ENGINE_OUT_DIR / "EuroJackpot_Model_Results_v3.json"
             if not generated.exists():
                 raise RuntimeError("Full engine did not create EuroJackpot_Model_Results_v3.json")
-            self.events.put(("log", "Full engine completed. Running validation, freeze and rendering."))
+            self.events.put(("log", f"Full engine completed. Results: {generated}"))
+            self.events.put(("log", "Running validation, freeze and rendering."))
             self._run_workflow("audited", generated)
         except Exception:
             self.events.put(("error", traceback.format_exc()))

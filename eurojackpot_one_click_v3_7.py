@@ -15,17 +15,22 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from eurojackpot_operational_v3_4 import independent_combination_space, verify_wheel_csv
+from eurojackpot_paths import ensure_user_layout, package_root, read_version, short_version
 from eurojackpot_ticket_renderer_v3_6 import TicketPayload, ensure_ticket_schema, render_ticket
 
 
-ROOT = Path(__file__).resolve().parent
-VERSION = "3.7"
-DEFAULT_DB = ROOT / "EuroJackpot_Operational_v3_7.sqlite"
+ROOT = package_root()
+VERSION = read_version(ROOT)
+WORKFLOW_VERSION = short_version(VERSION)
+BUNDLED_DB = ROOT / "EuroJackpot_Operational_v3_7.sqlite"
 DEFAULT_RESULTS = ROOT / "EuroJackpot_Model_Results_v3_1_Audited.json"
 FULL_ENGINE = ROOT / "eurojackpot_reliability_engine_v3.py"
 HISTORY = ROOT / "EuroJackpot_Canonical_History_v3.csv"
 TEMPLATE = ROOT / "EuroJackpot_Ticket_Template_v3_6.png"
-OUTPUT_DIR = ROOT / "outputs"
+_USER = ensure_user_layout(BUNDLED_DB)
+DEFAULT_DB = _USER["db"]
+OUTPUT_DIR = _USER["outputs"]
+ENGINE_OUT_DIR = _USER["engine"]
 SELECTED_POOL = [4, 21, 25, 27, 28, 35, 36, 37, 42, 44, 48, 50]
 
 
@@ -117,9 +122,12 @@ def database_integrity(db_path: str | Path) -> dict[str, Any]:
     return {"integrity": integrity, "foreign_key_violations": len(fk), "passed": integrity == "ok" and not fk}
 
 
-def run_full_engine(log_path: Path) -> Path:
+def run_full_engine(log_path: Path, engine_out: Path) -> Path:
     if not FULL_ENGINE.exists():
         raise WorkflowError(f"Full engine file not found: {FULL_ENGINE}")
+    engine_out.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env["EUROJACKPOT_OUTPUT_DIR"] = str(engine_out)
     with log_path.open("w", encoding="utf-8") as log:
         proc = subprocess.run(
             [sys.executable, str(FULL_ENGINE)],
@@ -127,11 +135,16 @@ def run_full_engine(log_path: Path) -> Path:
             stdout=log,
             stderr=subprocess.STDOUT,
             text=True,
+            env=env,
         )
     if proc.returncode != 0:
         raise WorkflowError(f"Full engine failed. Review {log_path.name}.")
-    results = ROOT / "EuroJackpot_Model_Results_v3.json"
+    results = engine_out / "EuroJackpot_Model_Results_v3.json"
     if not results.exists():
+        # Backward-compatible fallback for older engine builds.
+        legacy = ROOT / "EuroJackpot_Model_Results_v3.json"
+        if legacy.exists():
+            return legacy
         raise WorkflowError("Full engine completed without creating EuroJackpot_Model_Results_v3.json.")
     return results
 
@@ -285,17 +298,20 @@ def update_run_artifacts(db_path: str | Path, run_id: str, image: Path, summary:
 
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
-    OUTPUT_DIR.mkdir(exist_ok=True)
-    db_path = Path(args.db).resolve()
+    output_dir = Path(args.output_dir).expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    engine_out = Path(getattr(args, "engine_out", ENGINE_OUT_DIR)).expanduser().resolve()
+    engine_out.mkdir(parents=True, exist_ok=True)
+    db_path = Path(args.db).expanduser().resolve()
     history = validate_history(HISTORY)
     ensure_workflow_schema(db_path)
 
     timestamp = datetime.now(timezone.utc)
     if args.engine_mode == "full":
-        log_path = OUTPUT_DIR / f"EuroJackpot_FullEngine_{timestamp.strftime('%Y%m%dT%H%M%SZ')}.log"
-        result_path = run_full_engine(log_path)
+        log_path = output_dir / f"EuroJackpot_FullEngine_{timestamp.strftime('%Y%m%dT%H%M%SZ')}.log"
+        result_path = run_full_engine(log_path, engine_out)
     else:
-        result_path = Path(args.results).resolve()
+        result_path = Path(args.results).expanduser().resolve()
         if not result_path.exists():
             raise WorkflowError(f"Audited result file not found: {result_path}")
 
@@ -347,7 +363,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     payload = TicketPayload(
         draw_date=format_draw_date(engine["target_draw"]),
         jackpot=jackpot["display"],
-        engine_version=f"v{VERSION}",
+        engine_version=f"v{WORKFLOW_VERSION}",
         mode=header_mode,
         run_id=run_hash[:12],
         source_record_hash=run_hash,
@@ -355,8 +371,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         lines=ticket_lines[:6],
     )
 
-    image_path = OUTPUT_DIR / f"EuroJackpot_Ticket_{engine['target_draw']}_{run_hash[:12]}.png"
-    summary_path = OUTPUT_DIR / f"EuroJackpot_Run_{engine['target_draw']}_{run_hash[:12]}.json"
+    image_path = output_dir / f"EuroJackpot_Ticket_{engine['target_draw']}_{run_hash[:12]}.png"
+    summary_path = output_dir / f"EuroJackpot_Run_{engine['target_draw']}_{run_hash[:12]}.json"
 
     metadata = {
         "created_at_utc": timestamp.isoformat(),
@@ -379,7 +395,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     render_ticket(payload, image_path, TEMPLATE, db_path=db_path)
 
     summary = {
-        "workflow_version": VERSION,
+        "workflow_version": WORKFLOW_VERSION,
+        "app_version": VERSION,
         "run_id": run_id,
         "created_at_utc": timestamp.isoformat(),
         "target_draw": engine["target_draw"],
@@ -423,6 +440,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--results", default=str(DEFAULT_RESULTS))
     parser.add_argument("--db", default=str(DEFAULT_DB))
+    parser.add_argument(
+        "--output-dir",
+        default=str(OUTPUT_DIR),
+        help="Writable directory for ticket images and run summaries (default: user-data outputs).",
+    )
+    parser.add_argument(
+        "--engine-out",
+        default=str(ENGINE_OUT_DIR),
+        help="Writable directory for full-engine research artifacts (default: user-data engine).",
+    )
     parser.add_argument("--jackpot", default=None, help='Manual display value, e.g. "€120,000,000".')
     return parser
 

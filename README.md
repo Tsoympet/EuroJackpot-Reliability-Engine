@@ -64,7 +64,12 @@ Run the complete computationally intensive research engine first:
 python eurojackpot_one_click_v3_7.py --engine-mode full
 ```
 
-Generated ticket images, JSON reports and logs are written to the local output directory and registered in SQLite.
+Generated ticket images, JSON reports and logs are written to the per-user data directory and registered in SQLite:
+
+- Linux/macOS: `~/.local/share/eurojackpot-engine/outputs`
+- Windows: `%LOCALAPPDATA%\EuroJackpotEngine\outputs`
+
+Override the location with `EUROJACKPOT_DATA_DIR` when needed (CI, portable runs).
 
 ## Desktop installation
 
@@ -86,6 +91,10 @@ Use the `.deb` file from the GitHub Release assets:
 sudo apt install ./eurojackpot-engine_3.8.0_all.deb
 ```
 
+## Version
+
+The single source of truth is the root `VERSION` file (currently `3.8.0`). The desktop app, one-click workflow, research engine, and Windows installer script read from it.
+
 ## Current statistical conclusion
 
 The deployed champion remains the exact uniform model because no challenger has established a stable, prospectively validated predictive advantage. Research lines are experimental. Under the current 5/50 + 2/12 rules, every unique line has jackpot probability:
@@ -98,6 +107,7 @@ Jackpot size and rollover state affect payout and portfolio context only; they d
 
 ## Documentation
 
+- [v3.8 changelog](EuroJackpot_v3_8_CHANGELOG.md)
 - [Desktop application](EuroJackpot_Desktop_v3_8_README.md)
 - [One-command workflow](EuroJackpot_One_Click_Workflow_v3_7.md)
 - [Prize Watch integration](EuroJackpot_PrizeWatch_Integration_v3_5.md)

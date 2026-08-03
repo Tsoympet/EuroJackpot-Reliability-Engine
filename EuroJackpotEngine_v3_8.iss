@@ -1,7 +1,7 @@
 [Setup]
 AppId={{B4D5F351-804F-4972-8B47-4A3D65E2F9A8}
 AppName=EuroJackpot Reliability Engine
-AppVersion=3.8
+AppVersion=3.8.0
 DefaultDirName={localappdata}\EuroJackpotEngine
 DefaultGroupName=EuroJackpot Reliability Engine
 OutputDir=installer-output
