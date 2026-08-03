@@ -1,6 +1,20 @@
 # EuroJackpot Reliability Engine v3.8 — Desktop Edition
 
-The desktop application exposes the complete project through one graphical interface.
+The desktop application is the PC control center for the full project.
+
+## Main page (Dashboard)
+
+The Dashboard is the home screen and includes:
+
+- **Menu bar** — File, Run, View, Tools, Help
+- **Toolbar** — Generate Prediction, Full Retraining, Hunt Stable Edge, Score Draw, Refresh, folders
+- **Telemetry tiles** — draws, runs, AI learning, stable edge, jackpot, odds, models, wheels, tickets, DB, champion, target
+- **Live snapshot** — readable status of champion, edge hunt, latest workflow, jackpot
+- **Main action grid** — all primary workflow buttons in one place
+- **Live run log** — streaming engine output with clear/copy
+- **Status bar** — version, DB integrity, draw/run counts, data path, clock
+
+Keyboard shortcuts: `Ctrl+G` quick prediction, `F5` / `Ctrl+R` refresh.
 
 ## AI Learning tab
 
@@ -21,6 +35,7 @@ Use **Hunt Stable Edge** to run the multi-signal walk-forward edge search agains
 
 - Generate prediction using the audited whole-engine output
 - Run the full research-engine retraining
+- Hunt a stable predictive edge and review method catalog
 - Render and preview the EuroJackpot ticket
 - Import and validate Prize Watch jackpot-state JSON
 - Review champion and challenger models

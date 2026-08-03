@@ -74,6 +74,7 @@ class EuroJackpotDesktop(tk.Tk):
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.ticket_photo: ImageTk.PhotoImage | None = None
         self.active_thread: threading.Thread | None = None
+        self._telemetry_cache = ""
 
         self._configure_style()
         self._build_ui()
@@ -87,16 +88,29 @@ class EuroJackpotDesktop(tk.Tk):
             style.theme_use("clam")
         style.configure("Title.TLabel", font=("Segoe UI", 18, "bold"))
         style.configure("Heading.TLabel", font=("Segoe UI", 11, "bold"))
+        style.configure("MetricValue.TLabel", font=("Segoe UI", 16, "bold"))
+        style.configure("MetricCaption.TLabel", font=("Segoe UI", 9), foreground="#444444")
         style.configure("StatusGood.TLabel", foreground="#216e39")
         style.configure("StatusWarn.TLabel", foreground="#9a6700")
+        style.configure("StatusBad.TLabel", foreground="#a40e26")
         style.configure("Primary.TButton", font=("Segoe UI", 11, "bold"), padding=8)
+        style.configure("Action.TButton", padding=(10, 6))
         style.configure("Treeview", rowheight=26)
         style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        style.configure("Footer.TLabel", font=("Segoe UI", 9), foreground="#333333")
 
     def _build_ui(self) -> None:
+        self._build_menu()
+
         header = ttk.Frame(self, padding=(12, 10))
         header.pack(fill="x")
         ttk.Label(header, text=APP_NAME, style="Title.TLabel").pack(side="left")
+        self.header_subtitle = ttk.Label(
+            header,
+            text=f"v{APP_VERSION}  ·  Deployed champion: exact-uniform",
+            style="MetricCaption.TLabel",
+        )
+        self.header_subtitle.pack(side="left", padx=(12, 0))
         self.status_label = ttk.Label(header, text="Ready", style="StatusGood.TLabel")
         self.status_label.pack(side="right")
 
@@ -104,15 +118,16 @@ class EuroJackpotDesktop(tk.Tk):
         toolbar.pack(fill="x")
         ttk.Button(toolbar, text="Generate Prediction", style="Primary.TButton", command=self.run_quick).pack(side="left")
         ttk.Button(toolbar, text="Full Retraining", command=self.run_full).pack(side="left", padx=6)
+        ttk.Button(toolbar, text="Hunt Stable Edge", command=self.hunt_stable_edge).pack(side="left")
+        ttk.Button(toolbar, text="Score Draw", command=self.score_official_draw).pack(side="left", padx=6)
         ttk.Button(toolbar, text="Refresh", command=self.refresh_all).pack(side="left")
         ttk.Button(toolbar, text="Open Outputs", command=lambda: open_path(OUTPUT_DIR)).pack(side="left", padx=6)
-        ttk.Button(toolbar, text="Open Data Folder", command=lambda: open_path(DATA_DIR)).pack(side="left")
-
+        ttk.Button(toolbar, text="Open Data", command=lambda: open_path(DATA_DIR)).pack(side="left")
         self.progress = ttk.Progressbar(toolbar, mode="indeterminate", length=220)
         self.progress.pack(side="right")
 
         self.tabs = ttk.Notebook(self)
-        self.tabs.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        self.tabs.pack(fill="both", expand=True, padx=12, pady=(0, 4))
 
         self.dashboard_tab = ttk.Frame(self.tabs)
         self.prediction_tab = ttk.Frame(self.tabs)
@@ -143,24 +158,158 @@ class EuroJackpotDesktop(tk.Tk):
         self._build_history()
         self._build_audit()
         self._build_settings()
+        self._build_statusbar()
+
+        self.bind_all("<Control-r>", lambda _e: self.refresh_all())
+        self.bind_all("<Control-g>", lambda _e: self.run_quick())
+        self.bind_all("<F5>", lambda _e: self.refresh_all())
+
+    def _build_menu(self) -> None:
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
+
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Open Outputs Folder", command=lambda: open_path(OUTPUT_DIR))
+        file_menu.add_command(label="Open Data Folder", command=lambda: open_path(DATA_DIR))
+        file_menu.add_command(label="Open Installation Folder", command=lambda: open_path(ROOT))
+        file_menu.add_command(label="Open Database Location", command=lambda: open_path(DB_PATH.parent))
+        file_menu.add_separator()
+        file_menu.add_command(label="Import Jackpot JSON…", command=self.import_jackpot_json)
+        file_menu.add_command(label="Export Jackpot Template…", command=self.export_jackpot_template)
+        file_menu.add_separator()
+        file_menu.add_command(label="Open Latest Ticket", command=self.open_latest_ticket)
+        file_menu.add_command(label="Open Latest JSON Report", command=self.open_latest_report)
+        file_menu.add_command(label="Open Edge Report", command=self.open_edge_report)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.destroy)
+
+        run_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Run", menu=run_menu)
+        run_menu.add_command(label="Generate Prediction (Quick)\tCtrl+G", command=self.run_quick)
+        run_menu.add_command(label="Full Research Retraining…", command=self.run_full)
+        run_menu.add_separator()
+        run_menu.add_command(label="Hunt Stable Edge…", command=self.hunt_stable_edge)
+        run_menu.add_command(label="Train AI on History…", command=self.train_on_history)
+        run_menu.add_command(label="Score Official Draw…", command=self.score_official_draw)
+        run_menu.add_separator()
+        run_menu.add_command(label="Verify Coverage Wheels", command=self.refresh_wheels)
+
+        view_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Dashboard", command=lambda: self._show_tab(0))
+        view_menu.add_command(label="Prediction & Ticket", command=lambda: self._show_tab(1))
+        view_menu.add_command(label="AI Learning", command=lambda: self._show_tab(2))
+        view_menu.add_command(label="Jackpot State", command=lambda: self._show_tab(3))
+        view_menu.add_command(label="Models", command=lambda: self._show_tab(4))
+        view_menu.add_command(label="Coverage Wheels", command=lambda: self._show_tab(5))
+        view_menu.add_command(label="History", command=lambda: self._show_tab(6))
+        view_menu.add_command(label="Audit & Runs", command=lambda: self._show_tab(7))
+        view_menu.add_command(label="Settings", command=lambda: self._show_tab(8))
+        view_menu.add_separator()
+        view_menu.add_command(label="Refresh All\tF5", command=self.refresh_all)
+        view_menu.add_command(label="Clear Live Log", command=self.clear_live_log)
+
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="List Probability Methods", command=self.show_method_catalog)
+        tools_menu.add_command(label="Copy Telemetry Snapshot", command=self.copy_telemetry_snapshot)
+        tools_menu.add_command(label="Open Canonical History CSV", command=lambda: open_path(HISTORY))
+        tools_menu.add_command(label="Open Engine Artifacts", command=lambda: open_path(ENGINE_OUT_DIR))
+
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=self.show_about)
+        help_menu.add_command(label="Disclaimer", command=self.show_disclaimer)
+
+    def _show_tab(self, index: int) -> None:
+        self.tabs.select(index)
+
+    def _build_statusbar(self) -> None:
+        bar = ttk.Frame(self, padding=(12, 2, 12, 8))
+        bar.pack(fill="x", side="bottom")
+        self.footer_left = ttk.Label(bar, text="", style="Footer.TLabel")
+        self.footer_left.pack(side="left")
+        self.footer_right = ttk.Label(bar, text="", style="Footer.TLabel")
+        self.footer_right.pack(side="right")
+
+    def _metric_tile(self, parent: ttk.Frame, caption: str) -> ttk.Label:
+        box = ttk.LabelFrame(parent, text=caption, padding=8)
+        box.pack(side="left", fill="both", expand=True, padx=4)
+        value = ttk.Label(box, text="—", style="MetricValue.TLabel")
+        value.pack(anchor="w")
+        hint = ttk.Label(box, text="", style="MetricCaption.TLabel")
+        hint.pack(anchor="w")
+        value._hint = hint  # type: ignore[attr-defined]
+        return value
 
     def _build_dashboard(self) -> None:
-        top = ttk.Frame(self.dashboard_tab, padding=12)
-        top.pack(fill="x")
-        self.dashboard_summary = tk.Text(top, height=13, wrap="word", font=("Segoe UI", 11))
-        self.dashboard_summary.pack(fill="x")
+        # Telemetry strip
+        metrics = ttk.Frame(self.dashboard_tab, padding=(8, 10, 8, 4))
+        metrics.pack(fill="x")
+        self.metric_draws = self._metric_tile(metrics, "Canonical Draws")
+        self.metric_runs = self._metric_tile(metrics, "Workflow Runs")
+        self.metric_learning = self._metric_tile(metrics, "AI Learning")
+        self.metric_edge = self._metric_tile(metrics, "Stable Edge")
+        self.metric_jackpot = self._metric_tile(metrics, "Jackpot State")
+        self.metric_odds = self._metric_tile(metrics, "Jackpot Odds")
 
-        buttons = ttk.LabelFrame(self.dashboard_tab, text="Main Actions", padding=12)
-        buttons.pack(fill="x", padx=12, pady=6)
-        ttk.Button(buttons, text="Generate Prediction (Quick)", style="Primary.TButton", command=self.run_quick).pack(side="left")
-        ttk.Button(buttons, text="Run Full Engine", command=self.run_full).pack(side="left", padx=8)
-        ttk.Button(buttons, text="Score Official Draw", command=self.score_official_draw).pack(side="left")
-        ttk.Button(buttons, text="Import Jackpot JSON", command=self.import_jackpot_json).pack(side="left", padx=8)
-        ttk.Button(buttons, text="View Latest Ticket", command=self.open_latest_ticket).pack(side="left")
+        metrics2 = ttk.Frame(self.dashboard_tab, padding=(8, 0, 8, 8))
+        metrics2.pack(fill="x")
+        self.metric_models = self._metric_tile(metrics2, "Models")
+        self.metric_wheels = self._metric_tile(metrics2, "Wheels")
+        self.metric_tickets = self._metric_tile(metrics2, "Tickets")
+        self.metric_db = self._metric_tile(metrics2, "Database")
+        self.metric_champion = self._metric_tile(metrics2, "Champion")
+        self.metric_target = self._metric_tile(metrics2, "Next / Last Target")
 
-        log_frame = ttk.LabelFrame(self.dashboard_tab, text="Live Run Log", padding=8)
-        log_frame.pack(fill="both", expand=True, padx=12, pady=8)
-        self.live_log = tk.Text(log_frame, wrap="word", font=("Consolas", 9))
+        # Snapshot + actions
+        mid = ttk.Panedwindow(self.dashboard_tab, orient="horizontal")
+        mid.pack(fill="both", expand=False, padx=12, pady=4)
+
+        snap = ttk.LabelFrame(mid, text="Live Snapshot", padding=10)
+        actions = ttk.LabelFrame(mid, text="Main Actions", padding=10)
+        mid.add(snap, weight=3)
+        mid.add(actions, weight=2)
+
+        self.dashboard_summary = tk.Text(snap, height=12, wrap="word", font=("Segoe UI", 11))
+        self.dashboard_summary.pack(fill="both", expand=True)
+
+        action_specs = [
+            ("Generate Prediction (Quick)", self.run_quick, True),
+            ("Run Full Research Engine", self.run_full, False),
+            ("Hunt Stable Edge", self.hunt_stable_edge, False),
+            ("Train AI on History", self.train_on_history, False),
+            ("Score Official Draw", self.score_official_draw, False),
+            ("Import Jackpot JSON", self.import_jackpot_json, False),
+            ("Verify Coverage Wheels", self.refresh_wheels, False),
+            ("View Latest Ticket", self.open_latest_ticket, False),
+            ("Open Latest Report", self.open_latest_report, False),
+            ("Open Edge Report", self.open_edge_report, False),
+            ("Refresh Telemetry", self.refresh_all, False),
+            ("Clear Live Log", self.clear_live_log, False),
+        ]
+        grid = ttk.Frame(actions)
+        grid.pack(fill="both", expand=True)
+        for i, (label, cmd, primary) in enumerate(action_specs):
+            r, c = divmod(i, 2)
+            btn = ttk.Button(
+                grid,
+                text=label,
+                style="Primary.TButton" if primary else "Action.TButton",
+                command=cmd,
+            )
+            btn.grid(row=r, column=c, sticky="ew", padx=4, pady=4)
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
+
+        log_frame = ttk.LabelFrame(self.dashboard_tab, text="Live Run Log / Telemetry Stream", padding=8)
+        log_frame.pack(fill="both", expand=True, padx=12, pady=(4, 8))
+        log_tools = ttk.Frame(log_frame)
+        log_tools.pack(fill="x", pady=(0, 4))
+        ttk.Button(log_tools, text="Clear", command=self.clear_live_log).pack(side="right")
+        ttk.Button(log_tools, text="Copy Log", command=self.copy_live_log).pack(side="right", padx=6)
+        self.live_log = tk.Text(log_frame, wrap="word", font=("Consolas", 9), height=10)
         self.live_log.pack(fill="both", expand=True)
 
     def _build_prediction(self) -> None:
@@ -184,8 +333,10 @@ class EuroJackpotDesktop(tk.Tk):
 
         action_row = ttk.Frame(left)
         action_row.pack(fill="x", pady=8)
-        ttk.Button(action_row, text="Open Ticket", command=self.open_latest_ticket).pack(side="left")
-        ttk.Button(action_row, text="Open JSON Report", command=self.open_latest_report).pack(side="left", padx=6)
+        ttk.Button(action_row, text="Generate Prediction", style="Primary.TButton", command=self.run_quick).pack(side="left")
+        ttk.Button(action_row, text="Open Ticket", command=self.open_latest_ticket).pack(side="left", padx=6)
+        ttk.Button(action_row, text="Open JSON Report", command=self.open_latest_report).pack(side="left")
+        ttk.Button(action_row, text="Refresh", command=self.refresh_prediction).pack(side="left", padx=6)
 
         ttk.Label(right, text="Latest Rendered Ticket", style="Heading.TLabel").pack(anchor="w", pady=(0, 8))
         self.ticket_canvas = tk.Canvas(right, bg="#e6e6e6", highlightthickness=0)
@@ -248,6 +399,10 @@ class EuroJackpotDesktop(tk.Tk):
         self.jackpot_text.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
     def _build_models(self) -> None:
+        top = ttk.Frame(self.models_tab, padding=12)
+        top.pack(fill="x")
+        ttk.Button(top, text="Refresh Models", style="Primary.TButton", command=self.refresh_models).pack(side="left")
+        ttk.Button(top, text="List Probability Methods", command=self.show_method_catalog).pack(side="left", padx=6)
         self.models_tree = ttk.Treeview(
             self.models_tab,
             columns=("model", "version", "role", "status", "brier", "logloss", "gate", "description"),
@@ -261,7 +416,7 @@ class EuroJackpotDesktop(tk.Tk):
         for col, label, width in specs:
             self.models_tree.heading(col, text=label)
             self.models_tree.column(col, width=width)
-        self.models_tree.pack(fill="both", expand=True, padx=12, pady=12)
+        self.models_tree.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
     def _build_wheels(self) -> None:
         top = ttk.Frame(self.wheels_tab, padding=12)
@@ -284,10 +439,19 @@ class EuroJackpotDesktop(tk.Tk):
         self.wheels_tree.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
     def _build_history(self) -> None:
+        top = ttk.Frame(self.history_tab, padding=12)
+        top.pack(fill="x")
+        ttk.Button(top, text="Refresh History", style="Primary.TButton", command=self.refresh_history).pack(side="left")
+        ttk.Button(top, text="Open Canonical CSV", command=lambda: open_path(HISTORY)).pack(side="left", padx=6)
         self.history_text = tk.Text(self.history_tab, wrap="word", font=("Segoe UI", 11))
-        self.history_text.pack(fill="both", expand=True, padx=12, pady=12)
+        self.history_text.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
     def _build_audit(self) -> None:
+        top = ttk.Frame(self.audit_tab, padding=12)
+        top.pack(fill="x")
+        ttk.Button(top, text="Refresh Runs", style="Primary.TButton", command=self.refresh_audit).pack(side="left")
+        ttk.Button(top, text="Open Selected Ticket", command=self._open_selected_audit_ticket).pack(side="left", padx=6)
+        ttk.Button(top, text="Open Outputs", command=lambda: open_path(OUTPUT_DIR)).pack(side="left")
         self.audit_tree = ttk.Treeview(
             self.audit_tab,
             columns=("time", "run", "target", "mode", "status", "ticket"),
@@ -299,7 +463,7 @@ class EuroJackpotDesktop(tk.Tk):
         ]:
             self.audit_tree.heading(col, text=label)
             self.audit_tree.column(col, width=width)
-        self.audit_tree.pack(fill="both", expand=True, padx=12, pady=12)
+        self.audit_tree.pack(fill="both", expand=True, padx=12, pady=(0, 12))
         self.audit_tree.bind("<Double-1>", self._open_selected_audit_ticket)
 
     def _build_settings(self) -> None:
@@ -320,11 +484,19 @@ class EuroJackpotDesktop(tk.Tk):
             ttk.Label(frame, text=value, wraplength=850).grid(row=r, column=1, sticky="nw", pady=5)
 
         ttk.Separator(frame).grid(row=len(values), column=0, columnspan=2, sticky="ew", pady=14)
-        ttk.Button(frame, text="Open User Data", command=lambda: open_path(DATA_DIR)).grid(row=len(values)+1, column=0, sticky="w")
-        ttk.Button(frame, text="Open Installation Folder", command=lambda: open_path(ROOT)).grid(row=len(values)+1, column=1, sticky="w")
+        row = len(values) + 1
+        ttk.Button(frame, text="Open User Data", command=lambda: open_path(DATA_DIR)).grid(row=row, column=0, sticky="w")
+        ttk.Button(frame, text="Open Installation Folder", command=lambda: open_path(ROOT)).grid(row=row, column=1, sticky="w")
+        ttk.Button(frame, text="Open Outputs", command=lambda: open_path(OUTPUT_DIR)).grid(row=row + 1, column=0, sticky="w", pady=6)
+        ttk.Button(frame, text="Open Engine Artifacts", command=lambda: open_path(ENGINE_OUT_DIR)).grid(row=row + 1, column=1, sticky="w", pady=6)
+        ttk.Button(frame, text="Copy Telemetry Snapshot", command=self.copy_telemetry_snapshot).grid(row=row + 2, column=0, sticky="w")
+        ttk.Button(frame, text="About", command=self.show_about).grid(row=row + 2, column=1, sticky="w")
 
     def _set_busy(self, busy: bool, text: str = "Ready") -> None:
-        self.status_label.config(text=text)
+        style = "StatusWarn.TLabel" if busy else (
+            "StatusBad.TLabel" if "fail" in text.lower() else "StatusGood.TLabel"
+        )
+        self.status_label.config(text=text, style=style)
         if busy:
             self.progress.start(12)
         else:
@@ -439,35 +611,160 @@ class EuroJackpotDesktop(tk.Tk):
             last_run = conn.execute(
                 "SELECT * FROM workflow_runs_v3_7 ORDER BY created_at_utc DESC LIMIT 1"
             ).fetchone() if self._table_exists(conn, "workflow_runs_v3_7") else None
+            last_draw = conn.execute(
+                "SELECT * FROM draws ORDER BY draw_date DESC LIMIT 1"
+            ).fetchone() if self._table_exists(conn, "draws") else None
 
         learn = learning_status(DB_PATH)
         rate = "n/a" if learn["success_rate"] is None else f"{learn['success_rate']:.1%}"
+        edge = self._load_edge_summary()
+        jackpot = self._load_jackpot_snapshot()
+        wheels_pass, wheels_total = self._wheel_pass_counts()
+
+        # Metric tiles
+        self._set_metric(self.metric_draws, str(draws), f"Latest: {last_draw['draw_date'] if last_draw else 'n/a'}")
+        self._set_metric(self.metric_runs, str(runs), f"Artifacts: {artifacts}")
+        self._set_metric(
+            self.metric_learning,
+            str(learn["events"]),
+            f"Success {learn['successes']} / Fail {learn['failures']} ({rate})",
+        )
+        if edge:
+            edge_label = "EURO" if edge.get("euro_edge_detected") and not edge.get("main_edge_detected") else (
+                "FULL" if edge.get("draw_probability_edge_detected") else (
+                    "MAIN" if edge.get("main_edge_detected") else "NONE"
+                )
+            )
+            self._set_metric(
+                self.metric_edge,
+                edge_label,
+                str(edge.get("decision", "n/a"))[:42],
+            )
+        else:
+            self._set_metric(self.metric_edge, "—", "No edge search yet")
+        self._set_metric(
+            self.metric_jackpot,
+            jackpot.get("display", "n/a"),
+            jackpot.get("mode", "NO VERIFIED STATE"),
+        )
+        self._set_metric(self.metric_odds, "1 / 139,838,160", "Unique line · fail-closed")
+        self._set_metric(self.metric_models, str(models), "Champion stays uniform")
+        self._set_metric(self.metric_wheels, f"{wheels_pass}/{wheels_total}", "Coverage verification")
+        self._set_metric(self.metric_tickets, str(artifacts), "Rendered ticket images")
+        self._set_metric(
+            self.metric_db,
+            "OK" if integrity == "ok" else "CHECK",
+            integrity if integrity == "ok" else str(integrity)[:40],
+        )
+        self._set_metric(self.metric_champion, "Uniform", learn.get("deployed_champion", "uniform-1.0"))
+        target = last_run["target_draw"] if last_run else (last_draw["draw_date"] if last_draw else "n/a")
+        self._set_metric(
+            self.metric_target,
+            str(target),
+            f"Mode: {last_run['engine_mode'] if last_run else 'n/a'}",
+        )
+
         lines = [
             f"{APP_NAME} v{APP_VERSION}",
             "",
-            f"Database integrity: {integrity}",
-            f"Canonical draws in database: {draws}",
-            f"Registered models: {models}",
-            f"Workflow runs: {runs}",
-            f"Ticket artifacts: {artifacts}",
-            f"AI learning events: {learn['events']} (success {learn['successes']} / fail {learn['failures']}, rate {rate})",
-            "Champion remains exact-uniform; AI adapts research ranking only.",
-            "",
+            "Telemetry snapshot",
+            f"• Database integrity: {integrity}",
+            f"• Canonical draws: {draws}" + (f" (latest {last_draw['draw_date']})" if last_draw else ""),
+            f"• Registered models: {models}",
+            f"• Workflow runs: {runs} | ticket artifacts: {artifacts}",
+            f"• AI learning: {learn['events']} events · success rate {rate}",
+            f"• Deployed champion: exact-uniform (research ranking may adapt)",
+            f"• Unique-line jackpot odds: 1/139,838,160",
+            f"• Jackpot display: {jackpot.get('display', 'n/a')} ({jackpot.get('mode', 'n/a')})",
         ]
-        if last_run:
+        if edge:
+            primary = edge.get("primary") or {}
             lines += [
-                f"Latest run: {last_run['run_id']}",
-                f"Target draw: {last_run['target_draw']}",
-                f"Engine mode: {last_run['engine_mode']}",
-                f"Decision: {last_run['overall_status']}",
-                f"Jackpot mode: {last_run['jackpot_mode']}",
-                f"Ticket: {last_run['output_image']}",
+                "",
+                "Stable-edge hunt",
+                f"• Decision: {edge.get('decision')}",
+                f"• Euro edge: {edge.get('euro_edge_detected')} | Main edge: {edge.get('main_edge_detected')}",
+                f"• Euro Brier Δ: {edge.get('euro_brier_improvement', 'n/a')}",
+                f"• Primary research line: {primary.get('main')} + {primary.get('euro')}",
             ]
         else:
-            lines.append("No v3.7 workflow run recorded yet.")
+            lines += ["", "Stable-edge hunt: not run yet (use Hunt Stable Edge)."]
+
+        if last_run:
+            lines += [
+                "",
+                "Latest workflow run",
+                f"• Run ID: {last_run['run_id']}",
+                f"• Target draw: {last_run['target_draw']}",
+                f"• Engine mode: {last_run['engine_mode']}",
+                f"• Decision: {last_run['overall_status']}",
+                f"• Jackpot mode: {last_run['jackpot_mode']}",
+                f"• Ticket: {last_run['output_image']}",
+            ]
+        else:
+            lines += ["", "Latest workflow run: none yet."]
 
         self.dashboard_summary.delete("1.0", "end")
         self.dashboard_summary.insert("1.0", "\n".join(lines))
+        self._telemetry_cache = "\n".join(lines)
+        self._update_footer(integrity=integrity, draws=draws, runs=runs)
+
+    def _set_metric(self, label: ttk.Label, value: str, hint: str = "") -> None:
+        label.config(text=value)
+        hint_label = getattr(label, "_hint", None)
+        if hint_label is not None:
+            hint_label.config(text=hint)
+
+    def _update_footer(self, *, integrity: str = "ok", draws: int = 0, runs: int = 0) -> None:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.footer_left.config(
+            text=f"v{APP_VERSION}  ·  DB {integrity}  ·  {draws} draws  ·  {runs} runs  ·  {DATA_DIR}"
+        )
+        self.footer_right.config(text=now)
+
+    def _load_edge_summary(self) -> dict:
+        candidates = [
+            OUTPUT_DIR / "EuroJackpot_Edge_Search_Summary_v3_8.json",
+            ENGINE_OUT_DIR / "EuroJackpot_Edge_Search_Summary_v3_8.json",
+            ROOT / "EuroJackpot_Edge_Search_Summary_v3_8.json",
+        ]
+        for path in candidates:
+            if path.exists():
+                try:
+                    return json.loads(path.read_text(encoding="utf-8"))
+                except Exception:
+                    continue
+        return {}
+
+    def _load_jackpot_snapshot(self) -> dict:
+        try:
+            state = latest_state(DB_PATH)
+            if not state:
+                return {"display": "n/a", "mode": "NO VERIFIED STATE"}
+            return {
+                "display": f"€{float(state.get('jackpot_eur', 0)):,.0f}",
+                "mode": state.get("verification_status", "n/a"),
+            }
+        except Exception:
+            return {"display": "n/a", "mode": "NO VERIFIED STATE"}
+
+    def _wheel_pass_counts(self) -> tuple[int, int]:
+        pool = [4, 21, 25, 27, 28, 35, 36, 37, 42, 44, 48, 50]
+        specs = [
+            ("EuroJackpot_Wheel_54_Pair_Compact.csv", 54, 2),
+            ("EuroJackpot_Wheel_135_Pair_Extended.csv", 135, 2),
+            ("EuroJackpot_Wheel_198_Triple_Compact.csv", 198, 3),
+            ("EuroJackpot_Wheel_495_Triple_Extended.csv", 495, 3),
+        ]
+        passed = 0
+        for filename, expected, subset in specs:
+            try:
+                result = verify_wheel_csv(ROOT / filename, expected, subset, pool)
+                if result.get("passed"):
+                    passed += 1
+            except Exception:
+                pass
+        return passed, len(specs)
 
     def refresh_learning(self) -> None:
         status = learning_status(DB_PATH)
@@ -895,6 +1192,77 @@ class EuroJackpotDesktop(tk.Tk):
                 path = OUTPUT_DIR / path.name
             if path.exists():
                 open_path(path)
+
+    def clear_live_log(self) -> None:
+        self.live_log.delete("1.0", "end")
+
+    def copy_live_log(self) -> None:
+        content = self.live_log.get("1.0", "end").strip()
+        self.clipboard_clear()
+        self.clipboard_append(content)
+        self.status_label.config(text="Log copied", style="StatusGood.TLabel")
+
+    def copy_telemetry_snapshot(self) -> None:
+        content = getattr(self, "_telemetry_cache", "") or self.dashboard_summary.get("1.0", "end")
+        self.clipboard_clear()
+        self.clipboard_append(content.strip())
+        self.status_label.config(text="Telemetry copied", style="StatusGood.TLabel")
+
+    def open_edge_report(self) -> None:
+        candidates = [
+            ENGINE_OUT_DIR / "EuroJackpot_Edge_Search_Report_v3_8.json",
+            OUTPUT_DIR / "EuroJackpot_Edge_Search_Summary_v3_8.json",
+            ROOT / "EuroJackpot_Edge_Search_Summary_v3_8.json",
+        ]
+        for path in candidates:
+            if path.exists():
+                open_path(path)
+                return
+        messagebox.showinfo("Edge report", "No edge-search report found yet. Run Hunt Stable Edge first.")
+
+    def show_method_catalog(self) -> None:
+        try:
+            from eurojackpot_edge_engine_v3_8 import method_catalog
+            payload = json.dumps(method_catalog(), indent=2)
+        except Exception as exc:
+            messagebox.showerror("Methods", str(exc))
+            return
+        dialog = tk.Toplevel(self)
+        dialog.title("Probability Method Catalog")
+        dialog.geometry("760x520")
+        dialog.transient(self)
+        text_box = tk.Text(dialog, wrap="word", font=("Consolas", 10))
+        text_box.pack(fill="both", expand=True, padx=10, pady=10)
+        text_box.insert("1.0", payload)
+        text_box.config(state="disabled")
+
+    def show_about(self) -> None:
+        messagebox.showinfo(
+            "About",
+            (
+                f"{APP_NAME}\n"
+                f"Version {APP_VERSION}\n\n"
+                "Desktop control center for prediction, AI learning,\n"
+                "stable-edge hunt, jackpot state, wheels, and audit.\n\n"
+                "Deployed champion remains exact-uniform unless every\n"
+                "promotion gate passes. Unique-line odds: 1/139,838,160."
+            ),
+        )
+
+    def show_disclaimer(self) -> None:
+        path = ROOT / "DISCLAIMER.md"
+        body = path.read_text(encoding="utf-8") if path.exists() else (
+            "Research / entertainment software. Lottery house edge remains. "
+            "No guaranteed profit. Deployed odds stay uniform unless gates pass."
+        )
+        dialog = tk.Toplevel(self)
+        dialog.title("Disclaimer")
+        dialog.geometry("720x480")
+        dialog.transient(self)
+        text_box = tk.Text(dialog, wrap="word", font=("Segoe UI", 11))
+        text_box.pack(fill="both", expand=True, padx=10, pady=10)
+        text_box.insert("1.0", body)
+        text_box.config(state="disabled")
 
     @staticmethod
     def _table_exists(conn: sqlite3.Connection, name: str) -> bool:

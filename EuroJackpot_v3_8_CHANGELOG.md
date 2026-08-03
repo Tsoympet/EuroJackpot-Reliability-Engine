@@ -54,3 +54,8 @@
 - Learning predictor now blends era-aware frequency + EWMA + adaptive weights.
 - Reliability v3 now emits explicit `deployed_next_probabilities` (exact-uniform unless validated).
 - `python eurojackpot_edge_engine_v3_8.py list-methods` prints the method catalog.
+
+### Desktop control center
+
+- Finished the PC app main Dashboard with menu bar, telemetry tiles, action grid, live log tools, and status bar.
+- Wired File / Run / View / Tools / Help menus to prediction, edge hunt, learning, jackpot, wheels, and reports.
