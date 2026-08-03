@@ -7,12 +7,12 @@
   "main_brier_improvement": -2.0151545590194053e-05,
   "euro_brier_improvement": 0.0013512752194216326,
   "main_bootstrap_ci": [
-    -3.897419954468778e-05,
-    1.518056126975626e-06
+    -4.020980470511107e-05,
+    2.350435518138663e-08
   ],
   "euro_bootstrap_ci": [
-    0.0008148078614390077,
-    0.001907111212276573
+    0.0008239303048475075,
+    0.0018835797787391283
   ],
   "primary": {
     "main": [
@@ -23,15 +23,15 @@
       46
     ],
     "euro": [
-      5,
-      7
+      3,
+      5
     ],
-    "model_score": 0.971486215215583,
-    "anti_crowd_score": 0.54,
+    "model_score": 0.9713089029005161,
+    "anti_crowd_score": 0.62,
     "novelty": 0.89,
-    "value_score": 0.762233222551182,
-    "approx_net_ev": -1.980629901022725,
-    "approx_gross_ev": 0.5193700989772749,
+    "value_score": 0.5568929672304082,
+    "approx_net_ev": -2.0319257132673942,
+    "approx_gross_ev": 0.46807428673260587,
     "line": 1,
     "edge_type": "prize-value+research-rank",
     "jackpot_odds_unchanged": true
@@ -46,15 +46,15 @@
         46
       ],
       "euro": [
-        5,
-        7
+        3,
+        5
       ],
-      "model_score": 0.971486215215583,
-      "anti_crowd_score": 0.54,
+      "model_score": 0.9713089029005161,
+      "anti_crowd_score": 0.62,
       "novelty": 0.89,
-      "value_score": 0.762233222551182,
-      "approx_net_ev": -1.980629901022725,
-      "approx_gross_ev": 0.5193700989772749,
+      "value_score": 0.5568929672304082,
+      "approx_net_ev": -2.0319257132673942,
+      "approx_gross_ev": 0.46807428673260587,
       "line": 1,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
@@ -68,15 +68,15 @@
         46
       ],
       "euro": [
-        5,
-        7
+        3,
+        5
       ],
-      "model_score": 0.971486215215583,
-      "anti_crowd_score": 0.54,
+      "model_score": 0.9713089029005161,
+      "anti_crowd_score": 0.62,
       "novelty": 0.885,
-      "value_score": 0.761883222551182,
-      "approx_net_ev": -1.980629901022725,
-      "approx_gross_ev": 0.5193700989772749,
+      "value_score": 0.5565429672304082,
+      "approx_net_ev": -2.0319257132673942,
+      "approx_gross_ev": 0.46807428673260587,
       "line": 2,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
@@ -90,15 +90,15 @@
         43
       ],
       "euro": [
-        5,
-        7
+        3,
+        5
       ],
-      "model_score": 0.971486215215583,
-      "anti_crowd_score": 0.49,
+      "model_score": 0.9713089029005161,
+      "anti_crowd_score": 0.57,
       "novelty": 0.9125,
-      "value_score": 0.7576761873470574,
-      "approx_net_ev": -1.948570018369807,
-      "approx_gross_ev": 0.5514299816301931,
+      "value_score": 0.5488359320262837,
+      "approx_net_ev": -1.999865830614476,
+      "approx_gross_ev": 0.500134169385524,
       "line": 3,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
@@ -112,15 +112,15 @@
         49
       ],
       "euro": [
-        5,
-        7
+        3,
+        5
       ],
-      "model_score": 0.971486215215583,
-      "anti_crowd_score": 0.49,
+      "model_score": 0.9713089029005161,
+      "anti_crowd_score": 0.57,
       "novelty": 0.91,
-      "value_score": 0.7575011873470574,
-      "approx_net_ev": -1.948570018369807,
-      "approx_gross_ev": 0.5514299816301931,
+      "value_score": 0.5486609320262835,
+      "approx_net_ev": -1.999865830614476,
+      "approx_gross_ev": 0.500134169385524,
       "line": 4,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
@@ -134,15 +134,15 @@
         42
       ],
       "euro": [
-        5,
-        7
+        3,
+        5
       ],
-      "model_score": 0.971486215215583,
-      "anti_crowd_score": 0.49,
+      "model_score": 0.9713089029005161,
+      "anti_crowd_score": 0.57,
       "novelty": 0.91,
-      "value_score": 0.7575011873470574,
-      "approx_net_ev": -1.948570018369807,
-      "approx_gross_ev": 0.5514299816301931,
+      "value_score": 0.5486609320262835,
+      "approx_net_ev": -1.999865830614476,
+      "approx_gross_ev": 0.500134169385524,
       "line": 5,
       "edge_type": "prize-value+research-rank",
       "jackpot_odds_unchanged": true
