@@ -50,7 +50,6 @@ jobs:
               except Exception as exc:
                   errors.append(f"{path.name}: {exc}")
 
-          # Critical non-Python assets must match expected formats
           pngs = [
               "EuroJackpot_Desktop_Icon.png",
               "EuroJackpot_Ticket_Template_v3_6.png",
@@ -153,6 +152,10 @@ jobs:
 
       - name: Stable-edge search self-test
         run: python eurojackpot_edge_engine_v3_8.py selftest
+
+      - name: Current verified-data v3.8 prediction
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        run: python run_eurojackpot_current_edge_v3_8.py
 
       - name: Version helper smoke test
         shell: bash
